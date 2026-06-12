@@ -1,0 +1,142 @@
+"use client";
+
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ApprovalBadge,
+  ChannelBadge,
+  FormatBadge,
+  IdeaStatusBadge,
+  PriorityBadge,
+} from "@/components/shared/badges";
+import { EmptyState } from "@/components/shared/empty-state";
+import { useFlare } from "@/lib/store";
+import { formatDate } from "@/lib/dates";
+import { ideaDate } from "@/lib/stats";
+import { IDEA_STATUS_LABELS, KANBAN_COLUMNS, type Idea } from "@/lib/types";
+import { Lightbulb } from "lucide-react";
+
+interface IdeasTableProps {
+  ideas: Idea[];
+  onEdit: (idea: Idea) => void;
+  showClient?: boolean;
+}
+
+export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps) {
+  const { clientName, deleteIdea, moveIdea } = useFlare();
+
+  if (!ideas.length) {
+    return (
+      <EmptyState
+        icon={Lightbulb}
+        title="No hay ideas"
+        description="Crea la primera idea para empezar a producir contenido."
+      />
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead>Idea</TableHead>
+            {showClient && <TableHead>Cliente</TableHead>}
+            <TableHead>Estado</TableHead>
+            <TableHead>Prioridad</TableHead>
+            <TableHead>Formato · Canal</TableHead>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Responsable</TableHead>
+            <TableHead className="w-10" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {ideas.map((idea) => (
+            <TableRow key={idea.id}>
+              <TableCell className="max-w-64">
+                <p className="truncate text-sm font-medium">{idea.title}</p>
+                {idea.description && (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {idea.description}
+                  </p>
+                )}
+              </TableCell>
+              {showClient && (
+                <TableCell className="text-xs text-muted-foreground">
+                  {clientName(idea.clientId)}
+                </TableCell>
+              )}
+              <TableCell>
+                <div className="flex flex-col items-start gap-1">
+                  <IdeaStatusBadge status={idea.status} />
+                  <ApprovalBadge approval={idea.clientApproval} />
+                </div>
+              </TableCell>
+              <TableCell>
+                <PriorityBadge priority={idea.priority} />
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-1">
+                  <FormatBadge format={idea.format} />
+                  <ChannelBadge channel={idea.channel} />
+                </div>
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground">
+                {formatDate(ideaDate(idea))}
+              </TableCell>
+              <TableCell className="text-xs">{idea.responsible}</TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={<Button variant="ghost" size="icon-xs" />}
+                  >
+                    <MoreHorizontal />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem onClick={() => onEdit(idea)}>
+                      <Pencil /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Mover a</DropdownMenuLabel>
+                    {KANBAN_COLUMNS.filter((s) => s !== idea.status).map((s) => (
+                      <DropdownMenuItem key={s} onClick={() => moveIdea(idea.id, s)}>
+                        {IDEA_STATUS_LABELS[s]}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => {
+                        deleteIdea(idea.id);
+                        toast.success("Idea eliminada");
+                      }}
+                    >
+                      <Trash2 /> Eliminar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
