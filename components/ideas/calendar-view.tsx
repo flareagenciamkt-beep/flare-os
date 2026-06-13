@@ -15,14 +15,14 @@ import {
   startOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { IdeaStatusBadge } from "@/components/shared/badges";
 import { formatDate } from "@/lib/dates";
-import { ideaDate } from "@/lib/stats";
+import { ideaDate, isIdeaOverdue } from "@/lib/stats";
 import { cn } from "@/lib/utils";
-import type { Idea, IdeaStatus } from "@/lib/types";
+import { FORMAT_LABELS, type Idea, type IdeaStatus } from "@/lib/types";
 
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
@@ -30,9 +30,12 @@ const STATUS_DOT: Record<IdeaStatus, string> = {
   idea: "bg-zinc-400",
   validada: "bg-sky-400",
   en_produccion: "bg-flare",
-  en_revision: "bg-violet-400",
+  en_revision_interna: "bg-violet-400",
+  en_revision_cliente: "bg-fuchsia-400",
+  aprobada: "bg-teal-400",
   programada: "bg-amber-400",
   publicada: "bg-emerald-400",
+  pausada: "bg-orange-400",
   archivada: "bg-zinc-600",
 };
 
@@ -42,6 +45,8 @@ interface CalendarViewProps {
   showClient?: boolean;
   // Inyectada para no depender del store (el portal no monta FlareStoreProvider).
   clientName?: (clientId: string | null) => string;
+  // Crear contenido desde un día (botón + en cada celda). Opcional: el portal no lo usa.
+  onCreate?: (dateISO: string) => void;
 }
 
 export function CalendarView({
@@ -49,6 +54,7 @@ export function CalendarView({
   onEdit,
   showClient = true,
   clientName = () => "",
+  onCreate,
 }: CalendarViewProps) {
   const [month, setMonth] = React.useState(() => startOfMonth(new Date()));
 
@@ -117,31 +123,42 @@ export function CalendarView({
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    "min-h-24 bg-card p-1.5",
+                    "group/day min-h-24 bg-card p-1.5",
                     !isSameMonth(day, month) && "bg-card/40 text-muted-foreground/50",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "inline-flex size-5 items-center justify-center rounded-full text-[11px]",
-                      isToday(day)
-                        ? "bg-flare font-semibold text-white"
-                        : "text-muted-foreground",
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={cn(
+                        "inline-flex size-5 items-center justify-center rounded-full text-[11px]",
+                        isToday(day)
+                          ? "bg-flare font-semibold text-white"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {format(day, "d")}
+                    </span>
+                    {onCreate && (
+                      <button
+                        onClick={() => onCreate(format(day, "yyyy-MM-dd"))}
+                        className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover/day:opacity-100"
+                        aria-label={`Crear contenido el ${format(day, "d 'de' MMMM", { locale: es })}`}
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
                     )}
-                  >
-                    {format(day, "d")}
-                  </span>
+                  </div>
                   <div className="mt-1 space-y-1">
                     {dayIdeas.slice(0, 3).map(({ idea }) => (
                       <button
                         key={idea.id}
                         onClick={() => onEdit(idea)}
                         className="flex w-full items-center gap-1 rounded bg-secondary/70 px-1.5 py-1 text-left text-[10px] leading-tight hover:bg-secondary"
-                        title={
+                        title={`${
                           clientName(idea.clientId)
-                            ? `${clientName(idea.clientId)} · ${idea.title}`
-                            : idea.title
-                        }
+                            ? `${clientName(idea.clientId)} · `
+                            : ""
+                        }${idea.title} · ${FORMAT_LABELS[idea.format]}`}
                       >
                         <span
                           className={cn(
@@ -149,10 +166,18 @@ export function CalendarView({
                             STATUS_DOT[idea.status],
                           )}
                         />
-                        <span className="truncate">
+                        <span
+                          className={cn(
+                            "truncate",
+                            isIdeaOverdue(idea) && "text-red-400",
+                          )}
+                        >
                           {showClient
                             ? `${clientName(idea.clientId)} · ${idea.title}`
                             : idea.title}
+                        </span>
+                        <span className="ml-auto shrink-0 text-[8px] uppercase tracking-wide text-muted-foreground/70">
+                          {FORMAT_LABELS[idea.format].slice(0, 4)}
                         </span>
                       </button>
                     ))}

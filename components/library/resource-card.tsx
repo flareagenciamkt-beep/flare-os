@@ -12,12 +12,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TagBadge } from "@/components/shared/badges";
+import { PieceImage } from "@/components/shared/piece-image";
 import { useFlare } from "@/lib/store";
 import {
   RESOURCE_CATEGORY_LABELS,
   RESOURCE_TYPE_LABELS,
   type Resource,
+  type ResourceType,
 } from "@/lib/types";
+
+// Tipos visuales: si tienen link (Drive, CDN...) se intenta previsualizar.
+const VISUAL_TYPES: ResourceType[] = ["logo", "brandbook", "foto", "referencia"];
 
 interface ResourceCardProps {
   resource: Resource;
@@ -63,6 +68,20 @@ export function ResourceCard({ resource, onEdit, showClient = true }: ResourceCa
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {resource.externalLink && VISUAL_TYPES.includes(resource.type) && (
+          <a
+            href={resource.externalLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative block aspect-video overflow-hidden rounded-md border border-border bg-zinc-900"
+          >
+            <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
+              Vista previa no disponible
+            </div>
+            <PieceImage src={resource.externalLink} alt={resource.title} />
+          </a>
+        )}
 
         <div>
           <h3 className="text-sm font-semibold leading-snug">{resource.title}</h3>

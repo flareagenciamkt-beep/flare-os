@@ -28,9 +28,89 @@ export const clientSchema = z.object({
   nextAction: z.string(),
   linksText: z.string(), // una línea por link: "Etiqueta | https://url"
   internalNotes: z.string(),
+  // V1.1 — relación comercial
+  monthlyFee: z.coerce.number().min(0, "Mínimo 0"),
+  currency: z.string().min(1),
+  startDate: z.string(),
+  servicesText: z.string(), // servicios separados por coma
+  channelsText: z.string(), // canales separados por coma
+  nextDeliverable: z.string(),
 });
 
 export type ClientFormValues = z.infer<typeof clientSchema>;
+
+// ─── Vista 360 (V1.1) ───────────────────────────────────────────────────────
+
+export const strategySchema = z.object({
+  brandBrief: z.string(),
+  targetAudience: z.string(),
+  offer: z.string(),
+  tone: z.string(),
+  brandPromise: z.string(),
+  differentiators: z.string(),
+  competitors: z.string(),
+  doGuidelines: z.string(),
+  dontGuidelines: z.string(),
+  strategicNotes: z.string(),
+});
+
+export type StrategyFormValues = z.infer<typeof strategySchema>;
+
+export const noteSchema = z.object({
+  title: z.string().min(2, "El título es obligatorio"),
+  content: z.string(),
+  type: z.enum([
+    "general",
+    "reunion",
+    "feedback",
+    "problema",
+    "decision",
+    "recordatorio",
+    "estrategia",
+  ]),
+  isPinned: z.boolean(),
+  responsible: z.string().min(1, "Asigna un responsable"),
+  // Relación opcional: "none" | "idea" | "task" | "meeting" + id de la entidad
+  relatedEntityType: z.string(),
+  relatedEntityId: z.string(),
+});
+
+export type NoteFormValues = z.infer<typeof noteSchema>;
+
+export const accessSchema = z.object({
+  platform: z.string().min(2, "La plataforma es obligatoria"),
+  usernameOrEmail: z.string(),
+  url: z.string(),
+  status: z.enum(["pendiente", "solicitado", "recibido", "validado", "problema"]),
+  responsible: z.string().min(1, "Asigna un responsable"),
+  requiresSensitiveAccess: z.boolean(),
+  notes: z.string(),
+});
+
+export type AccessFormValues = z.infer<typeof accessSchema>;
+
+export const meetingSchema = z.object({
+  meetingDate: z.string().min(1, "La fecha es obligatoria"),
+  type: z.string(),
+  participants: z.string(),
+  topics: z.string(),
+  decisions: z.string(),
+  pendingItems: z.string(),
+  nextMeetingDate: z.string(),
+});
+
+export type MeetingFormValues = z.infer<typeof meetingSchema>;
+
+export const billingSchema = z.object({
+  monthlyFee: z.coerce.number().min(0),
+  currency: z.string().min(1),
+  paymentStatus: z.enum(["pendiente", "pagado", "vencido", "parcial"]),
+  billingDate: z.string(),
+  includedServices: z.string(),
+  observations: z.string(),
+});
+
+export type BillingFormValues = z.infer<typeof billingSchema>;
 
 export const ideaSchema = z.object({
   clientId: z.string(), // "none" = interno de Flare
@@ -50,9 +130,12 @@ export const ideaSchema = z.object({
     "idea",
     "validada",
     "en_produccion",
-    "en_revision",
+    "en_revision_interna",
+    "en_revision_cliente",
+    "aprobada",
     "programada",
     "publicada",
+    "pausada",
     "archivada",
   ]),
   priority: z.enum(["baja", "media", "alta", "urgente"]),
@@ -84,6 +167,11 @@ export const ideaSchema = z.object({
   prompt: z.string(),
   references: z.string(),
   coverImage: z.string(),
+  // Producción (V1.2)
+  copy: z.string(),
+  script: z.string(),
+  designNotes: z.string(),
+  externalUrl: z.string(),
 });
 
 export type IdeaFormValues = z.infer<typeof ideaSchema>;
@@ -91,6 +179,7 @@ export type IdeaFormValues = z.infer<typeof ideaSchema>;
 export const taskSchema = z.object({
   clientId: z.string(),
   ideaId: z.string(),
+  meetingId: z.string(), // "none" = sin reunión asociada
   title: z.string().min(2, "El título es obligatorio"),
   description: z.string(),
   status: z.enum(["pendiente", "en_progreso", "bloqueada", "en_revision", "completada"]),
@@ -100,10 +189,12 @@ export const taskSchema = z.object({
   area: z.enum([
     "contenido",
     "diseno",
+    "copy",
     "pauta",
     "web",
     "automatizacion",
     "estrategia",
+    "cuenta",
     "ventas",
     "otro",
   ]),
@@ -117,6 +208,11 @@ export const resourceSchema = z.object({
   clientId: z.string(),
   title: z.string().min(2, "El título es obligatorio"),
   type: z.enum([
+    "logo",
+    "brandbook",
+    "foto",
+    "video",
+    "documento",
     "prompt",
     "sop",
     "plantilla",
@@ -171,10 +267,12 @@ export const processSchema = z.object({
   area: z.enum([
     "contenido",
     "diseno",
+    "copy",
     "pauta",
     "web",
     "automatizacion",
     "estrategia",
+    "cuenta",
     "ventas",
     "otro",
   ]),
@@ -193,6 +291,8 @@ export const metricSchema = z.object({
   periodYear: z.coerce.number().min(2020).max(2100),
   instagramFollowers: z.coerce.number().min(0),
   monthlyReach: z.coerce.number().min(0),
+  impressions: z.coerce.number().min(0),
+  clicks: z.coerce.number().min(0),
   interactions: z.coerce.number().min(0),
   leadsGenerated: z.coerce.number().min(0),
   whatsappClicks: z.coerce.number().min(0),

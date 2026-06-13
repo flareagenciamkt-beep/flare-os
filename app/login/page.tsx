@@ -2,10 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Flame, LogIn } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import Image from "next/image";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { getOwnProfile } from "@/lib/profile";
 
@@ -21,7 +18,6 @@ export default function LoginPage() {
     router.replace(profile?.role === "client" ? "/portal" : "/clients/dashboard");
   }, [router]);
 
-  // Si ya hay sesión activa, entrar directo según el rol.
   React.useEffect(() => {
     if (!isSupabaseConfigured) return;
     getSupabase()
@@ -52,65 +48,121 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex flex-col items-center gap-2">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-flare">
-            <Flame className="size-6 text-white" />
-          </div>
-          <h1 className="text-lg font-semibold">Flare OS</h1>
-          <p className="text-xs text-muted-foreground">
-            Sistema operativo interno de Flare
-          </p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden" style={{ background: "radial-gradient(140% 100% at 50% 120%, rgba(245,42,108,0.12), transparent 55%), #080606" }}>
+      {/* Aurora glows */}
+      <div className="pointer-events-none absolute bottom-[-520px] left-1/2 h-[940px] w-[1560px] animate-aurora" style={{ transform: "translateX(-50%)", background: "radial-gradient(closest-side, rgba(245,42,108,0.30), rgba(254,78,73,0.12) 48%, rgba(255,106,53,0.04) 66%, transparent 76%)", filter: "blur(8px)" }} />
+      <div className="pointer-events-none absolute bottom-[-360px] left-1/2 h-[620px] w-[880px]" style={{ transform: "translateX(-50%)", background: "radial-gradient(closest-side, rgba(255,106,53,0.22), transparent 70%)", animation: "aurora-shift 14s ease-in-out infinite reverse" }} />
+      <div className="pointer-events-none absolute -right-[300px] -top-[320px] h-[760px] w-[760px]" style={{ background: "radial-gradient(closest-side, rgba(142,91,255,0.10), transparent 70%)" }} />
+
+      {/* Grid overlay */}
+      <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(241,233,224,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(241,233,224,0.025) 1px, transparent 1px)", backgroundSize: "64px 64px", maskImage: "radial-gradient(120% 70% at 50% 100%, #000 20%, transparent 70%)", WebkitMaskImage: "radial-gradient(120% 70% at 50% 100%, #000 20%, transparent 70%)" }} />
+
+      {/* Horizon line */}
+      <div className="pointer-events-none absolute bottom-[23%] left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent 6%, rgba(245,42,108,0.45), rgba(255,106,53,0.4) 55%, transparent 94%)", boxShadow: "0 0 24px rgba(245,42,108,0.4)" }} />
+
+      {/* Twinkling stars */}
+      <span className="absolute left-[15%] top-[22%] text-[13px] animate-twinkle" style={{ color: "rgba(245,42,108,0.5)" }}>✦</span>
+      <span className="absolute right-[19%] top-[31%] text-[9px]" style={{ color: "rgba(255,106,53,0.45)", animation: "twinkle 5.5s ease-in-out infinite 0.6s" }}>✦</span>
+      <span className="absolute bottom-[30%] left-[24%] text-[11px]" style={{ color: "rgba(254,78,73,0.4)", animation: "twinkle 6s ease-in-out infinite 1.4s" }}>✦</span>
+      <span className="absolute bottom-[20%] right-[13%] text-[15px]" style={{ color: "rgba(245,42,108,0.3)", animation: "twinkle 5s ease-in-out infinite 0.3s" }}>✦</span>
+      <span className="absolute left-[38%] top-[14%] text-[8px]" style={{ color: "rgba(255,106,53,0.35)", animation: "twinkle 7s ease-in-out infinite 2s" }}>✦</span>
+
+      {/* Login card */}
+      <div className="animate-fade-up relative z-10 flex w-[432px] flex-col items-center">
+        {/* Logo */}
+        <div className="relative mb-[30px] flex items-center justify-center">
+          <div className="animate-glow-pulse absolute h-[200px] w-[320px]" style={{ background: "radial-gradient(closest-side, rgba(245,42,108,0.28), rgba(255,106,53,0.06) 55%, transparent 72%)", filter: "blur(6px)" }} />
+          <Image
+            src="/logo-flare.png"
+            alt="flare"
+            width={248}
+            height={150}
+            className="relative"
+            style={{ mixBlendMode: "screen", filter: "drop-shadow(0 6px 30px rgba(245,42,108,0.35))" }}
+            priority
+          />
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5">
+        {/* Form card */}
+        <div className="relative w-full rounded-3xl p-9 pb-[30px]" style={{ background: "linear-gradient(165deg, rgba(28,22,20,0.72), rgba(14,11,10,0.82))", border: "1px solid rgba(241,233,224,0.1)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(241,233,224,0.06)" }}>
+          {/* Top gradient line */}
+          <div className="absolute left-6 right-6 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(245,42,108,0.6), rgba(255,106,53,0.5), transparent)" }} />
+
+          <div className="mb-[26px] flex flex-col items-center">
+            <span className="mb-3 font-mono text-[9px] uppercase tracking-[2.6px]" style={{ color: "#8E5BFF" }}>ACCESO PRIVADO</span>
+            <h1 className="mb-2 text-center text-[30px] font-extrabold leading-tight tracking-tight" style={{ fontFamily: "var(--font-bricolage), sans-serif", letterSpacing: "-0.6px" }}>Welcome to FLARE OS</h1>
+            <p className="text-[15px]" style={{ color: "#B8AFA5" }}>Your creative command center.</p>
+          </div>
+
           {isSupabaseConfigured ? (
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Email</Label>
-                <Input
+            <form onSubmit={onSubmit} className="flex w-full flex-col gap-[15px]">
+              <div className="flex flex-col gap-[7px]">
+                <label className="font-mono text-[10px] uppercase tracking-[1.6px]" style={{ color: "#8a827a" }}>EMAIL</label>
+                <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@flare.agency"
                   autoComplete="email"
                   required
+                  className="w-full rounded-xl px-4 py-3.5 text-[14.5px] text-[#F1E9E0] outline-none transition-all focus:border-[rgba(245,42,108,0.55)] focus:shadow-[0_0_0_3px_rgba(245,42,108,0.14)]"
+                  style={{ background: "rgba(8,6,6,0.65)", border: "1px solid rgba(241,233,224,0.12)", fontFamily: "var(--font-hanken), sans-serif" }}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Contraseña</Label>
-                <Input
+              <div className="flex flex-col gap-[7px]">
+                <label className="font-mono text-[10px] uppercase tracking-[1.6px]" style={{ color: "#8a827a" }}>PASSWORD</label>
+                <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="••••••••••"
                   autoComplete="current-password"
                   required
+                  className="w-full rounded-xl px-4 py-3.5 text-[14.5px] text-[#F1E9E0] outline-none transition-all focus:border-[rgba(245,42,108,0.55)] focus:shadow-[0_0_0_3px_rgba(245,42,108,0.14)]"
+                  style={{ background: "rgba(8,6,6,0.65)", border: "1px solid rgba(241,233,224,0.12)", fontFamily: "var(--font-hanken), sans-serif" }}
                 />
               </div>
               {error && <p className="text-xs text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
-                <LogIn data-icon="inline-start" />
-                {loading ? "Entrando..." : "Iniciar sesión"}
-              </Button>
-              <p className="text-center text-[11px] text-muted-foreground">
-                Los usuarios del equipo se crean en Supabase → Authentication.
-              </p>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flare-gradient mt-3 w-full rounded-xl px-4 py-[15px] text-[15px] font-bold text-white transition-all hover:-translate-y-px hover:shadow-[0_16px_46px_rgba(245,42,108,0.5)]"
+                style={{ boxShadow: "0 10px 34px rgba(245,42,108,0.32)", fontFamily: "var(--font-hanken), sans-serif" }}
+              >
+                {loading ? "Entrando..." : "Entrar a FLARE OS"}
+              </button>
             </form>
           ) : (
-            <div className="space-y-3 text-center">
-              <p className="text-sm font-medium">Modo demo activo</p>
-              <p className="text-xs text-muted-foreground">
-                No hay credenciales de Supabase en .env.local, así que Flare OS corre
-                con datos de ejemplo sin necesidad de iniciar sesión.
-              </p>
-              <Button className="w-full" onClick={() => router.replace("/clients/dashboard")}>
-                Entrar en modo demo
-              </Button>
+            <div className="flex w-full flex-col gap-[15px]">
+              <div className="text-center">
+                <p className="text-sm font-medium text-[#F1E9E0]">Modo demo activo</p>
+                <p className="mt-1 text-xs" style={{ color: "#8a827a" }}>
+                  Sin Supabase — Flare OS corre con datos de ejemplo.
+                </p>
+              </div>
+              <button
+                onClick={() => router.replace("/clients/dashboard")}
+                className="flare-gradient w-full rounded-xl px-4 py-[15px] text-[15px] font-bold text-white transition-all hover:-translate-y-px hover:shadow-[0_16px_46px_rgba(245,42,108,0.5)]"
+                style={{ boxShadow: "0 10px 34px rgba(245,42,108,0.32)", fontFamily: "var(--font-hanken), sans-serif" }}
+              >
+                Entrar a FLARE OS
+              </button>
             </div>
           )}
+
+          <div className="mt-6 flex items-center justify-center gap-4 text-[12.5px]" style={{ color: "#8a827a" }}>
+            <span className="cursor-pointer transition-colors hover:text-[#F1E9E0]">SSO del equipo</span>
+            <span className="h-[3px] w-[3px] rounded-full" style={{ background: "#4a443f" }} />
+            <span className="cursor-pointer transition-colors hover:text-[#F1E9E0]">Acceso de clientes</span>
+          </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="absolute bottom-[26px] left-0 right-0 flex items-center justify-center gap-2.5 font-mono text-[9.5px] uppercase tracking-[1.8px]" style={{ color: "#5a534d" }}>
+        <span>FLARE OS · V1.0</span>
+        <span>—</span>
+        <span>LO QUE SE MIDE, SE CONTROLA</span>
       </div>
     </div>
   );

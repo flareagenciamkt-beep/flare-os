@@ -11,8 +11,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col">
             <Header />
-            <main className="flex-1 overflow-y-auto">
-              <div className="mx-auto w-full max-w-7xl px-6 py-6">{children}</div>
+            <main
+              className="flex-1 overflow-y-auto"
+              style={{
+                background:
+                  "radial-gradient(1100px 480px at 72% -220px, rgba(245,42,108,0.05), transparent 70%), #0A0808",
+              }}
+            >
+              <div className="mx-auto w-full max-w-[1440px] px-7 py-6">
+                {children}
+              </div>
             </main>
           </div>
         </div>

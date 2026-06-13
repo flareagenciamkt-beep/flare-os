@@ -13,17 +13,27 @@ import { Button } from "@/components/ui/button";
 import { Splash } from "@/components/layout/splash";
 import { fromRow, getSupabase, isSupabaseConfigured, toRow } from "./supabase";
 import {
+  MOCK_ACCESS,
+  MOCK_BILLING,
+  MOCK_CLIENT_NOTES,
   MOCK_CLIENTS,
   MOCK_IDEAS,
+  MOCK_MEETINGS,
   MOCK_METRICS,
   MOCK_PROCESSES,
   MOCK_PROMPTS,
   MOCK_RESOURCES,
+  MOCK_STRATEGIES,
   MOCK_TASKS,
 } from "./mock-data";
 import type {
   Client,
+  ClientAccess,
+  ClientBilling,
+  ClientMeeting,
   ClientMetric,
+  ClientNote,
+  ClientStrategy,
   Idea,
   IdeaStatus,
   Process,
@@ -82,6 +92,33 @@ interface FlareStore {
   updateMetric: (id: string, data: Partial<ClientMetric>) => void;
   deleteMetric: (id: string) => void;
 
+  // Vista 360 (V1.1)
+  strategies: ClientStrategy[];
+  upsertStrategy: (
+    clientId: string,
+    data: Omit<ClientStrategy, keyof WithMeta | "clientId">,
+  ) => void;
+
+  clientNotes: ClientNote[];
+  addClientNote: (data: Omit<ClientNote, keyof WithMeta>) => ClientNote;
+  updateClientNote: (id: string, data: Partial<ClientNote>) => void;
+  deleteClientNote: (id: string) => void;
+
+  accesses: ClientAccess[];
+  addAccess: (data: Omit<ClientAccess, keyof WithMeta>) => ClientAccess;
+  updateAccess: (id: string, data: Partial<ClientAccess>) => void;
+  deleteAccess: (id: string) => void;
+
+  meetings: ClientMeeting[];
+  addMeeting: (data: Omit<ClientMeeting, keyof WithMeta>) => ClientMeeting;
+  updateMeeting: (id: string, data: Partial<ClientMeeting>) => void;
+  deleteMeeting: (id: string) => void;
+
+  billing: ClientBilling[];
+  addBilling: (data: Omit<ClientBilling, keyof WithMeta>) => ClientBilling;
+  updateBilling: (id: string, data: Partial<ClientBilling>) => void;
+  deleteBilling: (id: string) => void;
+
   getClient: (id: string) => Client | undefined;
   clientName: (clientId: string | null) => string;
 }
@@ -111,6 +148,11 @@ function SetupScreen({ onRetry }: { onRetry: () => void }) {
           </li>
           <li>
             Repite con <code className="rounded bg-secondary px-1">supabase/seed.sql</code> para cargar tus clientes iniciales.
+          </li>
+          <li>
+            Ejecuta también las migraciones de{" "}
+            <code className="rounded bg-secondary px-1">supabase/migrations/</code> en
+            orden (002, 003...).
           </li>
           <li>
             En <b>Authentication → Users → Add user</b> crea tu usuario (marca
@@ -156,6 +198,21 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   const [metrics, setMetrics] = React.useState<ClientMetric[]>(
     configured ? [] : MOCK_METRICS,
   );
+  const [strategies, setStrategies] = React.useState<ClientStrategy[]>(
+    configured ? [] : MOCK_STRATEGIES,
+  );
+  const [clientNotes, setClientNotes] = React.useState<ClientNote[]>(
+    configured ? [] : MOCK_CLIENT_NOTES,
+  );
+  const [accesses, setAccesses] = React.useState<ClientAccess[]>(
+    configured ? [] : MOCK_ACCESS,
+  );
+  const [meetings, setMeetings] = React.useState<ClientMeeting[]>(
+    configured ? [] : MOCK_MEETINGS,
+  );
+  const [billing, setBilling] = React.useState<ClientBilling[]>(
+    configured ? [] : MOCK_BILLING,
+  );
   const [status, setStatus] = React.useState<LoadStatus>(
     configured ? "loading" : "ready",
   );
@@ -165,7 +222,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   // reintentos lo fijan antes de llamar (evita setState síncrono en efectos).
   const fetchAll = React.useCallback(async () => {
     const sb = getSupabase();
-    const [c, i, t, r, p, pr, m] = await Promise.all([
+    const [c, i, t, r, p, pr, m, st, cn, ac, mt, bi] = await Promise.all([
       sb.from("clients").select("*").order("created_at"),
       sb.from("ideas").select("*").order("created_at", { ascending: false }),
       sb.from("tasks").select("*").order("created_at", { ascending: false }),
@@ -173,8 +230,13 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       sb.from("prompts").select("*").order("created_at", { ascending: false }),
       sb.from("processes").select("*").order("created_at", { ascending: false }),
       sb.from("client_metrics").select("*"),
+      sb.from("client_strategy").select("*"),
+      sb.from("client_notes").select("*").order("created_at", { ascending: false }),
+      sb.from("client_access").select("*").order("created_at", { ascending: false }),
+      sb.from("client_meetings").select("*").order("meeting_date", { ascending: false }),
+      sb.from("client_billing").select("*").order("created_at", { ascending: false }),
     ]);
-    const failed = [c, i, t, r, p, pr, m].find((res) => res.error);
+    const failed = [c, i, t, r, p, pr, m, st, cn, ac, mt, bi].find((res) => res.error);
     if (failed?.error) {
       if (failed.error.code === "PGRST205") {
         setStatus("missing-schema");
@@ -191,6 +253,11 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     setPrompts((p.data ?? []).map((row) => fromRow<Prompt>(row)));
     setProcesses((pr.data ?? []).map((row) => fromRow<Process>(row)));
     setMetrics((m.data ?? []).map((row) => fromRow<ClientMetric>(row)));
+    setStrategies((st.data ?? []).map((row) => fromRow<ClientStrategy>(row)));
+    setClientNotes((cn.data ?? []).map((row) => fromRow<ClientNote>(row)));
+    setAccesses((ac.data ?? []).map((row) => fromRow<ClientAccess>(row)));
+    setMeetings((mt.data ?? []).map((row) => fromRow<ClientMeeting>(row)));
+    setBilling((bi.data ?? []).map((row) => fromRow<ClientBilling>(row)));
     setStatus("ready");
   }, []);
 
@@ -255,6 +322,11 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     const promptCrud = makeCrud<Prompt>("prompts", setPrompts);
     const processCrud = makeCrud<Process>("processes", setProcesses);
     const metricCrud = makeCrud<ClientMetric>("client_metrics", setMetrics);
+    const strategyCrud = makeCrud<ClientStrategy>("client_strategy", setStrategies);
+    const noteCrud = makeCrud<ClientNote>("client_notes", setClientNotes);
+    const accessCrud = makeCrud<ClientAccess>("client_access", setAccesses);
+    const meetingCrud = makeCrud<ClientMeeting>("client_meetings", setMeetings);
+    const billingCrud = makeCrud<ClientBilling>("client_billing", setBilling);
 
     return {
       clients,
@@ -277,12 +349,12 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       addIdea: ideaCrud.add,
       updateIdea: ideaCrud.update,
       deleteIdea: ideaCrud.remove,
-      // Al volver a "en_revision" la aprobación previa queda obsoleta
+      // Al entrar a "revisión cliente" la aprobación previa queda obsoleta
       // (igual que el trigger reset_idea_approval en la base).
       moveIdea: (id, status) =>
         ideaCrud.update(
           id,
-          (status === "en_revision"
+          (status === "en_revision_cliente"
             ? { status, clientApproval: "pendiente", clientApprovalAt: null }
             : { status }) as Partial<Idea>,
         ),
@@ -307,13 +379,56 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       updateMetric: metricCrud.update,
       deleteMetric: metricCrud.remove,
 
+      strategies,
+      // 1:1 con el cliente: actualiza si existe, crea si no.
+      upsertStrategy: (clientId, data) => {
+        const existing = strategies.find((s) => s.clientId === clientId);
+        if (existing) strategyCrud.update(existing.id, data);
+        else strategyCrud.add({ ...data, clientId });
+      },
+
+      clientNotes,
+      addClientNote: noteCrud.add,
+      updateClientNote: noteCrud.update,
+      deleteClientNote: noteCrud.remove,
+
+      accesses,
+      addAccess: accessCrud.add,
+      updateAccess: accessCrud.update,
+      deleteAccess: accessCrud.remove,
+
+      meetings,
+      addMeeting: meetingCrud.add,
+      updateMeeting: meetingCrud.update,
+      deleteMeeting: meetingCrud.remove,
+
+      billing,
+      addBilling: billingCrud.add,
+      updateBilling: billingCrud.update,
+      deleteBilling: billingCrud.remove,
+
       getClient: (id) => clients.find((c) => c.id === id),
       clientName: (clientId) =>
         clientId
           ? (clients.find((c) => c.id === clientId)?.brand ?? "Cliente eliminado")
           : "Flare (interno)",
     };
-  }, [configured, fetchAll, clients, ideas, tasks, resources, prompts, processes, metrics]);
+  }, [
+    configured,
+    fetchAll,
+    clients,
+    ideas,
+    tasks,
+    resources,
+    prompts,
+    processes,
+    metrics,
+    strategies,
+    clientNotes,
+    accesses,
+    meetings,
+    billing,
+  ]);
 
   const retry = () => {
     setStatus("loading");

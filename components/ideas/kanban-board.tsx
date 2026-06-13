@@ -4,6 +4,7 @@
 // La arquitectura por columnas deja listo el terreno para DnD más adelante.
 
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   MoreHorizontal,
@@ -28,13 +29,19 @@ import {
 } from "@/components/shared/badges";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
-import { ideaDate } from "@/lib/stats";
+import { ideaDate, isIdeaOverdue } from "@/lib/stats";
+import { cn } from "@/lib/utils";
 import {
   IDEA_STATUS_LABELS,
   KANBAN_COLUMNS,
+  optionsFromLabels,
   type Idea,
   type IdeaStatus,
 } from "@/lib/types";
+
+// El menú "Mover a" ofrece TODOS los estados (incluye pausada/archivada,
+// que no son columnas del tablero).
+const ALL_STATUSES = optionsFromLabels(IDEA_STATUS_LABELS);
 
 interface KanbanBoardProps {
   ideas: Idea[];
@@ -79,9 +86,9 @@ function KanbanCard({
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Mover a</DropdownMenuLabel>
-            {KANBAN_COLUMNS.filter((s) => s !== idea.status).map((s) => (
-              <DropdownMenuItem key={s} onClick={() => moveIdea(idea.id, s)}>
-                {IDEA_STATUS_LABELS[s]}
+            {ALL_STATUSES.filter((s) => s.value !== idea.status).map((s) => (
+              <DropdownMenuItem key={s.value} onClick={() => moveIdea(idea.id, s.value)}>
+                {s.label}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
@@ -106,7 +113,14 @@ function KanbanCard({
       </div>
 
       <div className="mt-2.5 flex items-center justify-between text-[11px] text-muted-foreground">
-        <span>{formatDate(ideaDate(idea), "d MMM")}</span>
+        <span
+          className={cn(
+            isIdeaOverdue(idea) && "inline-flex items-center gap-1 font-medium text-red-400",
+          )}
+        >
+          {isIdeaOverdue(idea) && <AlertTriangle className="size-3" />}
+          {formatDate(ideaDate(idea), "d MMM")}
+        </span>
         <span>{idea.responsible}</span>
       </div>
 

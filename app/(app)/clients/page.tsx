@@ -3,9 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
+  Archive,
   Building2,
+  Lightbulb,
   MoreHorizontal,
+  Pause,
   Pencil,
+  Play,
   Plus,
   Search,
   Trash2,
@@ -41,6 +46,7 @@ import {
 } from "@/components/shared/badges";
 import { ClientFormDialog } from "@/components/forms/client-form";
 import { useFlare } from "@/lib/store";
+import { clientAlerts, isIdeaActive, isTaskOverdue } from "@/lib/stats";
 import {
   CLIENT_STATUS_LABELS,
   HEALTH_LABELS,
@@ -68,8 +74,11 @@ const HEALTH_OPTIONS = [
   ...optionsFromLabels(HEALTH_LABELS),
 ];
 
+const feeFmt = new Intl.NumberFormat("es-CO");
+
 export default function ClientsPage() {
-  const { clients, deleteClient } = useFlare();
+  const { clients, deleteClient, updateClient, ideas, tasks, metrics, accesses } =
+    useFlare();
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState("all");
   const [owner, setOwner] = React.useState("all");
@@ -160,17 +169,39 @@ export default function ClientsPage() {
                 <TableHead>Fase</TableHead>
                 <TableHead>Prioridad</TableHead>
                 <TableHead>Responsable</TableHead>
+                <TableHead className="text-right">Fee</TableHead>
+                <TableHead>Próximo entregable</TableHead>
+                <TableHead>Operación</TableHead>
                 <TableHead className="w-36">Progreso</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((c) => (
+              {filtered.map((c) => {
+                const alerts =
+                  c.status === "activo"
+                    ? clientAlerts(c, ideas, tasks, metrics, accesses)
+                    : [];
+                const overdueCount = tasks.filter(
+                  (t) => t.clientId === c.id && isTaskOverdue(t),
+                ).length;
+                const activeContent = ideas.filter(
+                  (i) => i.clientId === c.id && isIdeaActive(i),
+                ).length;
+                return (
                 <TableRow key={c.id}>
                   <TableCell>
                     <Link href={`/clients/${c.id}`} className="group block">
-                      <p className="text-sm font-medium transition-colors group-hover:text-flare-soft">
+                      <p className="flex items-center gap-1.5 text-sm font-medium transition-colors group-hover:text-flare-soft">
                         {c.brand}
+                        {alerts.length > 0 && (
+                          <AlertTriangle
+                            className="size-3.5 shrink-0 text-amber-400"
+                            aria-label={alerts.join(" · ")}
+                          >
+                            <title>{alerts.join(" · ")}</title>
+                          </AlertTriangle>
+                        )}
                       </p>
                       <p className="text-[11px] text-muted-foreground">{c.name}</p>
                     </Link>
@@ -191,6 +222,28 @@ export default function ClientsPage() {
                     <PriorityBadge priority={c.priority} />
                   </TableCell>
                   <TableCell className="text-xs">{c.owner}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">
+                    {c.monthlyFee > 0
+                      ? `${feeFmt.format(c.monthlyFee)} ${c.currency}`
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="max-w-40 truncate text-xs text-muted-foreground">
+                    {c.nextDeliverable || "—"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      {overdueCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
+                          <AlertTriangle className="size-2.5" />
+                          {overdueCount}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        <Lightbulb className="size-2.5" />
+                        {activeContent}
+                      </span>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Progress value={c.progressPercentage} className="flex-1" />
@@ -206,7 +259,7 @@ export default function ClientsPage() {
                       >
                         <MoreHorizontal />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem
                           onClick={() => {
                             setEditing(c);
@@ -215,6 +268,37 @@ export default function ClientsPage() {
                         >
                           <Pencil /> Editar
                         </DropdownMenuItem>
+                        {c.status === "pausado" ? (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              updateClient(c.id, { status: "activo" });
+                              toast.success(`${c.brand} reactivado`);
+                            }}
+                          >
+                            <Play /> Reactivar
+                          </DropdownMenuItem>
+                        ) : (
+                          c.status !== "cerrado" && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                updateClient(c.id, { status: "pausado" });
+                                toast.success(`${c.brand} pausado`);
+                              }}
+                            >
+                              <Pause /> Pausar
+                            </DropdownMenuItem>
+                          )
+                        )}
+                        {c.status !== "cerrado" && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              updateClient(c.id, { status: "cerrado" });
+                              toast.success(`${c.brand} archivado`);
+                            }}
+                          >
+                            <Archive /> Archivar
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
@@ -229,7 +313,8 @@ export default function ClientsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>

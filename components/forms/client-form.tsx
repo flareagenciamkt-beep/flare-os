@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -9,15 +10,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, RHFSelect } from "@/components/shared/form-field";
 import { FormDialog } from "./form-dialog";
 import { useFlare } from "@/lib/store";
-import { clientSchema, linksToText, parseLinks } from "@/lib/schemas";
+import {
+  clientSchema,
+  linksToText,
+  nullableDate,
+  parseLinks,
+  parseList,
+} from "@/lib/schemas";
 import {
   CLIENT_STATUS_LABELS,
+  CURRENCY_OPTIONS,
   HEALTH_LABELS,
   PHASE_LABELS,
   TEAM_MEMBERS,
   optionsFromLabels,
   type Client,
 } from "@/lib/types";
+
+const CURRENCY_SELECT_OPTIONS = CURRENCY_OPTIONS.map((c) => ({ value: c, label: c }));
 
 const OWNER_OPTIONS = TEAM_MEMBERS.map((m) => ({ value: m, label: m }));
 const CLIENT_PRIORITY_OPTIONS = [
@@ -52,6 +62,12 @@ function toValues(client: Client | null | undefined) {
       nextAction: client.nextAction,
       linksText: linksToText(client.importantLinks),
       internalNotes: client.internalNotes,
+      monthlyFee: client.monthlyFee,
+      currency: client.currency,
+      startDate: client.startDate ?? "",
+      servicesText: client.activeServices.join(", "),
+      channelsText: client.activeChannels.join(", "),
+      nextDeliverable: client.nextDeliverable,
     };
   }
   return {
@@ -72,11 +88,18 @@ function toValues(client: Client | null | undefined) {
     nextAction: "",
     linksText: "",
     internalNotes: "",
+    monthlyFee: 0,
+    currency: "USD",
+    startDate: "",
+    servicesText: "",
+    channelsText: "",
+    nextDeliverable: "",
   };
 }
 
 export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialogProps) {
   const { addClient, updateClient } = useFlare();
+  const router = useRouter();
 
   const form = useForm({
     resolver: zodResolver(clientSchema),
@@ -90,14 +113,21 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
   }, [open, client, reset]);
 
   const onSubmit = handleSubmit((values) => {
-    const { linksText, ...rest } = values;
-    const data = { ...rest, importantLinks: parseLinks(linksText) };
+    const { linksText, servicesText, channelsText, startDate, ...rest } = values;
+    const data = {
+      ...rest,
+      importantLinks: parseLinks(linksText),
+      activeServices: parseList(servicesText),
+      activeChannels: parseList(channelsText),
+      startDate: nullableDate(startDate),
+    };
     if (client) {
       updateClient(client.id, data);
       toast.success("Cliente actualizado");
     } else {
-      addClient(data);
+      const created = addClient(data);
       toast.success("Cliente creado");
+      router.push(`/clients/${created.id}`);
     }
     onOpenChange(false);
   });
@@ -163,6 +193,30 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
         </Field>
         <Field label="KPI principal">
           <Input {...register("mainKpi")} placeholder="Ej: Leads por WhatsApp" />
+        </Field>
+        <Field
+          label="Fee mensual"
+          error={errors.monthlyFee?.message as string | undefined}
+        >
+          <Input type="number" min={0} step="any" {...register("monthlyFee")} />
+        </Field>
+        <RHFSelect
+          control={control}
+          name="currency"
+          label="Moneda"
+          options={CURRENCY_SELECT_OPTIONS}
+        />
+        <Field label="Fecha de inicio">
+          <Input type="date" {...register("startDate")} />
+        </Field>
+        <Field label="Próximo entregable">
+          <Input {...register("nextDeliverable")} placeholder="Ej: Calendario de julio" />
+        </Field>
+        <Field label="Servicios activos (separados por coma)">
+          <Input {...register("servicesText")} placeholder="Contenido, Pauta, Email" />
+        </Field>
+        <Field label="Canales activos (separados por coma)">
+          <Input {...register("channelsText")} placeholder="Instagram, Facebook" />
         </Field>
         <Field label="Descripción" className="sm:col-span-2">
           <Textarea rows={2} {...register("description")} />

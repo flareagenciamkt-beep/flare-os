@@ -36,12 +36,14 @@ interface IdeaFormDialogProps {
   idea?: Idea | null;
   defaultClientId?: string | null;
   defaultStatus?: IdeaStatus;
+  defaultDate?: string; // crear contenido desde un día del calendario
 }
 
 function toValues(
   idea: Idea | null | undefined,
   defaultClientId: string | null | undefined,
   defaultStatus: IdeaStatus | undefined,
+  defaultDate: string | undefined,
 ): IdeaFormValues {
   if (idea) {
     return {
@@ -60,6 +62,10 @@ function toValues(
       prompt: idea.prompt,
       references: idea.references,
       coverImage: idea.coverImage ?? "",
+      copy: idea.copy ?? "",
+      script: idea.script ?? "",
+      designNotes: idea.designNotes ?? "",
+      externalUrl: idea.externalUrl ?? "",
     };
   }
   return {
@@ -71,13 +77,17 @@ function toValues(
     priority: "media",
     format: "carrusel",
     channel: "instagram",
-    suggestedDate: "",
+    suggestedDate: defaultDate ?? "",
     publishDate: "",
     responsible: TEAM_MEMBERS[0],
     notes: "",
     prompt: "",
     references: "",
     coverImage: "",
+    copy: "",
+    script: "",
+    designNotes: "",
+    externalUrl: "",
   };
 }
 
@@ -87,20 +97,21 @@ export function IdeaFormDialog({
   idea,
   defaultClientId,
   defaultStatus,
+  defaultDate,
 }: IdeaFormDialogProps) {
   const { addIdea, updateIdea } = useFlare();
   const clientOptions = useClientOptions();
 
   const form = useForm<IdeaFormValues>({
     resolver: zodResolver(ideaSchema),
-    defaultValues: toValues(idea, defaultClientId, defaultStatus),
+    defaultValues: toValues(idea, defaultClientId, defaultStatus, defaultDate),
   });
   const { register, control, handleSubmit, reset, formState } = form;
   const errors = formState.errors;
 
   React.useEffect(() => {
-    if (open) reset(toValues(idea, defaultClientId, defaultStatus));
-  }, [open, idea, defaultClientId, defaultStatus, reset]);
+    if (open) reset(toValues(idea, defaultClientId, defaultStatus, defaultDate));
+  }, [open, idea, defaultClientId, defaultStatus, defaultDate, reset]);
 
   const onSubmit = handleSubmit((values) => {
     const data = {
@@ -198,6 +209,23 @@ export function IdeaFormDialog({
         </Field>
         <Field label="Fecha de publicación">
           <Input type="date" {...register("publishDate")} />
+        </Field>
+        <div className="sm:col-span-2">
+          <p className="mb-1 border-b border-border pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Producción
+          </p>
+        </div>
+        <Field label="Copy" className="sm:col-span-2">
+          <Textarea rows={3} {...register("copy")} placeholder="Texto final de la pieza..." />
+        </Field>
+        <Field label="Guion" className="sm:col-span-2">
+          <Textarea rows={3} {...register("script")} placeholder="Guion para reel/video..." />
+        </Field>
+        <Field label="Notas de diseño">
+          <Textarea rows={2} {...register("designNotes")} />
+        </Field>
+        <Field label="Link externo (Canva, Figma, Drive...)">
+          <Input {...register("externalUrl")} placeholder="https://..." />
         </Field>
         <Field label="Imagen de la pieza (URL para la vista previa del feed)" className="sm:col-span-2">
           <Input

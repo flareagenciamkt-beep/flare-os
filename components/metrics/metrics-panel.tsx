@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { StackedBarChart, TrendChart } from "@/components/shared/charts";
 import { MetricFormDialog } from "@/components/forms/metric-form";
 import { useFlare } from "@/lib/store";
 import { MONTH_LABELS, type ClientMetric } from "@/lib/types";
@@ -55,32 +57,17 @@ interface MetricsDisplayProps {
   onDelete?: (metric: ClientMetric) => void;
 }
 
-// Cards + tabla de métricas, sin dependencia del store (la usa también el portal).
-export function MetricsDisplay({
-  metrics,
-  readOnly = false,
-  onEdit,
-  onDelete,
-}: MetricsDisplayProps) {
+// Cards del último mes con delta vs. el anterior (las usa también el portal).
+export function MetricsCards({ metrics }: { metrics: ClientMetric[] }) {
   const sorted = [...metrics].sort(
     (a, b) => b.periodYear - a.periodYear || b.periodMonth - a.periodMonth,
   );
   const latest = sorted[0];
   const previous = sorted[1];
-
-  if (!latest) {
-    return (
-      <EmptyState
-        icon={LineChart}
-        title="Sin métricas registradas"
-        description="Cuando haya registros mensuales aparecerán aquí."
-      />
-    );
-  }
+  if (!latest) return null;
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Seguidores Instagram"
           value={fmt.format(latest.instagramFollowers)}
@@ -107,9 +94,103 @@ export function MetricsDisplay({
           icon={MessageCircle}
           tone="success"
         />
+    </div>
+  );
+}
+
+// Gráficos de evolución mensual (los usan el equipo y el portal).
+const CONTENT_SERIES = [
+  { label: "Posts", color: "#FF704D" },
+  { label: "Reels", color: "#38bdf8" },
+  { label: "Carruseles", color: "#a78bfa" },
+  { label: "Historias", color: "#facc15" },
+];
+
+function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Card className="gap-0 py-0">
+      <CardContent className="p-4">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </p>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function MetricsCharts({ metrics }: { metrics: ClientMetric[] }) {
+  // Cronológico (viejo → nuevo), máximo último año.
+  const chrono = [...metrics]
+    .sort((a, b) => a.periodYear - b.periodYear || a.periodMonth - b.periodMonth)
+    .slice(-12);
+  if (!chrono.length) return null;
+
+  const monthLabel = (m: ClientMetric) =>
+    `${MONTH_LABELS[m.periodMonth - 1].slice(0, 3)} ${String(m.periodYear).slice(2)}`;
+  const series = (pick: (m: ClientMetric) => number) =>
+    chrono.map((m) => ({ label: monthLabel(m), value: pick(m) }));
+  const hasAdSpend = chrono.some((m) => m.adSpend > 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ChartCard title="Seguidores en Instagram">
+          <TrendChart points={series((m) => m.instagramFollowers)} color="#FF4D2E" />
+        </ChartCard>
+        <ChartCard title="Alcance mensual">
+          <TrendChart points={series((m) => m.monthlyReach)} color="#38bdf8" />
+        </ChartCard>
+        <ChartCard title="Interacciones">
+          <TrendChart points={series((m) => m.interactions)} color="#a78bfa" />
+        </ChartCard>
+        <ChartCard title="Leads generados">
+          <TrendChart points={series((m) => m.leadsGenerated)} color="#34d399" />
+        </ChartCard>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <ChartCard title="Contenido publicado por mes">
+        <StackedBarChart
+          data={chrono.map((m) => ({
+            label: monthLabel(m),
+            values: [
+              m.postsPublished,
+              m.reelsPublished,
+              m.carouselsPublished,
+              m.storiesPublished,
+            ],
+          }))}
+          series={CONTENT_SERIES}
+        />
+      </ChartCard>
+
+      {hasAdSpend && (
+        <ChartCard title="Inversión en pauta (USD)">
+          <TrendChart
+            points={series((m) => m.adSpend)}
+            color="#f59e0b"
+            valueFormatter={(n) => `$${fmt.format(n)}`}
+          />
+        </ChartCard>
+      )}
+    </div>
+  );
+}
+
+// Tabla de registros mensuales (la usa también el portal en modo readOnly).
+export function MetricsTable({
+  metrics,
+  readOnly = false,
+  onEdit,
+  onDelete,
+}: MetricsDisplayProps) {
+  const sorted = [...metrics].sort(
+    (a, b) => b.periodYear - a.periodYear || b.periodMonth - a.periodMonth,
+  );
+  if (!sorted.length) return null;
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -122,6 +203,7 @@ export function MetricsDisplay({
               <TableHead className="text-right">Posts</TableHead>
               <TableHead className="text-right">Reels</TableHead>
               <TableHead className="text-right">Pauta (USD)</TableHead>
+              <TableHead className="text-right">CPL</TableHead>
               {!readOnly && <TableHead className="w-10" />}
             </TableRow>
           </TableHeader>
@@ -160,6 +242,11 @@ export function MetricsDisplay({
                 <TableCell className="text-right text-xs tabular-nums">
                   ${fmt.format(m.adSpend)}
                 </TableCell>
+                <TableCell className="text-right text-xs tabular-nums">
+                  {m.leadsGenerated > 0 && m.adSpend > 0
+                    ? `$${(m.adSpend / m.leadsGenerated).toFixed(1)}`
+                    : "—"}
+                </TableCell>
                 {!readOnly && (
                   <TableCell>
                     <DropdownMenu>
@@ -187,7 +274,26 @@ export function MetricsDisplay({
             ))}
           </TableBody>
         </Table>
-      </div>
+    </div>
+  );
+}
+
+// Cards + tabla, sin dependencia del store.
+export function MetricsDisplay(props: MetricsDisplayProps) {
+  if (!props.metrics.length) {
+    return (
+      <EmptyState
+        icon={LineChart}
+        title="Sin métricas registradas"
+        description="Cuando haya registros mensuales aparecerán aquí."
+      />
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <MetricsCards metrics={props.metrics} />
+      <MetricsCharts metrics={props.metrics} />
+      <MetricsTable {...props} />
     </div>
   );
 }

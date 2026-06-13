@@ -32,7 +32,7 @@ function Pill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-medium tracking-[0.6px]",
         className,
       )}
     >
@@ -45,10 +45,10 @@ const DOT = <span className="size-1.5 rounded-full bg-current" />;
 
 export function ClientStatusBadge({ status }: { status: ClientStatus }) {
   const styles: Record<ClientStatus, string> = {
-    activo: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    pausado: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-    prospecto: "border-sky-500/30 bg-sky-500/10 text-sky-400",
-    cerrado: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
+    activo: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
+    pausado: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
+    prospecto: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
+    cerrado: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#6e665f]",
   };
   return (
     <Pill className={styles[status]}>
@@ -60,10 +60,10 @@ export function ClientStatusBadge({ status }: { status: ClientStatus }) {
 
 export function HealthBadge({ health }: { health: HealthStatus }) {
   const styles: Record<HealthStatus, string> = {
-    bien: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    atencion: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-    atrasado: "border-orange-500/30 bg-orange-500/10 text-orange-400",
-    critico: "border-red-500/30 bg-red-500/10 text-red-400",
+    bien: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
+    atencion: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
+    atrasado: "border-[rgba(255,106,53,0.26)] bg-[rgba(255,106,53,0.08)] text-[#FF6A35]",
+    critico: "border-[rgba(255,92,92,0.28)] bg-[rgba(255,92,92,0.08)] text-[#FF5C5C]",
   };
   return (
     <Pill className={styles[health]}>
@@ -75,17 +75,17 @@ export function HealthBadge({ health }: { health: HealthStatus }) {
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
   const styles: Record<Priority, string> = {
-    baja: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
-    media: "border-sky-500/30 bg-sky-500/10 text-sky-400",
-    alta: "border-orange-500/30 bg-orange-500/10 text-orange-400",
-    urgente: "border-red-500/30 bg-red-500/10 text-red-400",
+    baja: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#A39A91]",
+    media: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
+    alta: "border-[rgba(255,106,53,0.26)] bg-[rgba(255,106,53,0.08)] text-[#FF6A35]",
+    urgente: "border-[rgba(255,92,92,0.28)] bg-[rgba(255,92,92,0.08)] text-[#FF5C5C]",
   };
   return <Pill className={styles[priority]}>{PRIORITY_LABELS[priority]}</Pill>;
 }
 
 export function PhaseBadge({ phase }: { phase: ClientPhase }) {
   return (
-    <Pill className="border-border bg-secondary text-foreground/80">
+    <Pill className="border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#D8CFC5]">
       {PHASE_LABELS[phase]}
     </Pill>
   );
@@ -93,13 +93,16 @@ export function PhaseBadge({ phase }: { phase: ClientPhase }) {
 
 export function IdeaStatusBadge({ status }: { status: IdeaStatus }) {
   const styles: Record<IdeaStatus, string> = {
-    idea: "border-zinc-500/30 bg-zinc-500/10 text-zinc-300",
-    validada: "border-sky-500/30 bg-sky-500/10 text-sky-400",
-    en_produccion: "border-flare/40 bg-flare/10 text-flare-soft",
-    en_revision: "border-violet-500/30 bg-violet-500/10 text-violet-400",
-    programada: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-    publicada: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    archivada: "border-zinc-600/30 bg-zinc-600/10 text-zinc-500",
+    idea: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#A39A91]",
+    validada: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
+    en_produccion: "border-[rgba(245,42,108,0.3)] bg-[rgba(245,42,108,0.08)] text-[#ff7da4]",
+    en_revision_interna: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
+    en_revision_cliente: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
+    aprobada: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
+    programada: "border-[rgba(255,106,53,0.26)] bg-[rgba(255,106,53,0.08)] text-[#FF6A35]",
+    publicada: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
+    pausada: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
+    archivada: "border-[rgba(241,233,224,0.08)] bg-[rgba(241,233,224,0.02)] text-[#57504a]",
   };
   return (
     <Pill className={styles[status]}>
@@ -111,11 +114,11 @@ export function IdeaStatusBadge({ status }: { status: IdeaStatus }) {
 
 export function TaskStatusBadge({ status }: { status: TaskStatus }) {
   const styles: Record<TaskStatus, string> = {
-    pendiente: "border-zinc-500/30 bg-zinc-500/10 text-zinc-300",
-    en_progreso: "border-flare/40 bg-flare/10 text-flare-soft",
-    bloqueada: "border-red-500/30 bg-red-500/10 text-red-400",
-    en_revision: "border-violet-500/30 bg-violet-500/10 text-violet-400",
-    completada: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+    pendiente: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#A39A91]",
+    en_progreso: "border-[rgba(245,42,108,0.3)] bg-[rgba(245,42,108,0.08)] text-[#ff7da4]",
+    bloqueada: "border-[rgba(255,92,92,0.28)] bg-[rgba(255,92,92,0.08)] text-[#FF5C5C]",
+    en_revision: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
+    completada: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
   };
   return (
     <Pill className={styles[status]}>
@@ -127,16 +130,16 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
 
 export function ProcessStatusBadge({ status }: { status: ProcessStatus }) {
   const styles: Record<ProcessStatus, string> = {
-    activo: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    borrador: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-    archivado: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
+    activo: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
+    borrador: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
+    archivado: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#6e665f]",
   };
   return <Pill className={styles[status]}>{PROCESS_STATUS_LABELS[status]}</Pill>;
 }
 
 export function ChannelBadge({ channel }: { channel: Channel }) {
   return (
-    <Pill className="border-border bg-secondary text-foreground/70">
+    <Pill className="border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#A39A91]">
       {CHANNEL_LABELS[channel]}
     </Pill>
   );
@@ -144,18 +147,17 @@ export function ChannelBadge({ channel }: { channel: Channel }) {
 
 export function FormatBadge({ format }: { format: IdeaFormat }) {
   return (
-    <Pill className="border-border bg-secondary text-foreground/70">
+    <Pill className="border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#A39A91]">
       {FORMAT_LABELS[format]}
     </Pill>
   );
 }
 
-// No muestra nada en "pendiente": solo señales accionables para el equipo.
 export function ApprovalBadge({ approval }: { approval?: ClientApproval }) {
   if (!approval || approval === "pendiente") return null;
   const styles: Record<Exclude<ClientApproval, "pendiente">, string> = {
-    aprobada: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    cambios_solicitados: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+    aprobada: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
+    cambios_solicitados: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
   };
   return (
     <Pill className={styles[approval]}>
@@ -167,6 +169,8 @@ export function ApprovalBadge({ approval }: { approval?: ClientApproval }) {
 
 export function TagBadge({ tag }: { tag: string }) {
   return (
-    <Pill className="border-border bg-secondary text-muted-foreground">#{tag}</Pill>
+    <Pill className="border-[rgba(241,233,224,0.08)] bg-[rgba(241,233,224,0.02)] text-[#8a827a]">
+      #{tag}
+    </Pill>
   );
 }

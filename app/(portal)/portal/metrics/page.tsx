@@ -1,6 +1,12 @@
 "use client";
 
-import { MetricsDisplay } from "@/components/metrics/metrics-panel";
+import { LineChart } from "lucide-react";
+import { EmptyState } from "@/components/shared/empty-state";
+import {
+  MetricsCards,
+  MetricsCharts,
+  MetricsTable,
+} from "@/components/metrics/metrics-panel";
 import { usePortal } from "@/lib/portal-store";
 
 export default function PortalMetricsPage() {
@@ -14,7 +20,23 @@ export default function PortalMetricsPage() {
           Resultados mensuales registrados por el equipo de Flare.
         </p>
       </div>
-      <MetricsDisplay metrics={metrics} readOnly />
+
+      {metrics.length === 0 ? (
+        <EmptyState
+          icon={LineChart}
+          title="Sin métricas registradas"
+          description="Cuando haya registros mensuales aparecerán aquí."
+        />
+      ) : (
+        <div className="space-y-4">
+          <MetricsCards metrics={metrics} />
+          <MetricsCharts metrics={metrics} />
+          <div>
+            <p className="mb-2 text-sm font-semibold">Detalle mes a mes</p>
+            <MetricsTable metrics={metrics} readOnly />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

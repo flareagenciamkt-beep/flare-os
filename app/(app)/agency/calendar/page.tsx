@@ -19,6 +19,7 @@ export default function CalendarPage() {
   const filterHook = useIdeaFilters();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Idea | null>(null);
+  const [defaultDate, setDefaultDate] = React.useState<string | undefined>();
 
   const filtered = applyIdeaFilters(ideas, filterHook.filters);
 
@@ -31,6 +32,7 @@ export default function CalendarPage() {
           <Button
             onClick={() => {
               setEditing(null);
+              setDefaultDate(undefined);
               setFormOpen(true);
             }}
           >
@@ -47,8 +49,18 @@ export default function CalendarPage() {
           setEditing(idea);
           setFormOpen(true);
         }}
+        onCreate={(date) => {
+          setEditing(null);
+          setDefaultDate(date);
+          setFormOpen(true);
+        }}
       />
-      <IdeaFormDialog open={formOpen} onOpenChange={setFormOpen} idea={editing} />
+      <IdeaFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        idea={editing}
+        defaultDate={defaultDate}
+      />
     </div>
   );
 }

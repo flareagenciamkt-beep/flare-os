@@ -3,12 +3,17 @@
 
 import { writeFileSync } from "node:fs";
 import {
+  MOCK_ACCESS,
+  MOCK_BILLING,
+  MOCK_CLIENT_NOTES,
   MOCK_CLIENTS,
   MOCK_IDEAS,
+  MOCK_MEETINGS,
   MOCK_METRICS,
   MOCK_PROCESSES,
   MOCK_PROMPTS,
   MOCK_RESOURCES,
+  MOCK_STRATEGIES,
   MOCK_TASKS,
 } from "../lib/mock-data";
 
@@ -45,15 +50,29 @@ function insertStatement(table: string, rows: Row[], fill: Row = {}): string {
 
 const sql = [
   "-- ─── Flare OS — Seed inicial (generado desde lib/mock-data.ts) ─────────────",
-  "-- Ejecutar en Supabase → SQL Editor DESPUÉS de schema.sql.",
+  "-- Ejecutar en Supabase → SQL Editor DESPUÉS de schema.sql y las migraciones.",
   "",
   insertStatement("clients", MOCK_CLIENTS as unknown as Row[]),
-  insertStatement("ideas", MOCK_IDEAS as unknown as Row[], { coverImage: "" }),
-  insertStatement("tasks", MOCK_TASKS as unknown as Row[]),
+  insertStatement("ideas", MOCK_IDEAS as unknown as Row[], {
+    coverImage: "",
+    clientApproval: "pendiente",
+    clientFeedback: "",
+    clientApprovalAt: null,
+    copy: "",
+    script: "",
+    designNotes: "",
+    externalUrl: "",
+  }),
+  insertStatement("tasks", MOCK_TASKS as unknown as Row[], { meetingId: null }),
   insertStatement("resources", MOCK_RESOURCES as unknown as Row[]),
   insertStatement("prompts", MOCK_PROMPTS as unknown as Row[]),
   insertStatement("processes", MOCK_PROCESSES as unknown as Row[]),
   insertStatement("client_metrics", MOCK_METRICS as unknown as Row[]),
+  insertStatement("client_strategy", MOCK_STRATEGIES as unknown as Row[]),
+  insertStatement("client_notes", MOCK_CLIENT_NOTES as unknown as Row[]),
+  insertStatement("client_access", MOCK_ACCESS as unknown as Row[]),
+  insertStatement("client_meetings", MOCK_MEETINGS as unknown as Row[]),
+  insertStatement("client_billing", MOCK_BILLING as unknown as Row[]),
 ].join("\n");
 
 writeFileSync(new URL("../supabase/seed.sql", import.meta.url), sql);

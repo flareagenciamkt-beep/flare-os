@@ -107,7 +107,13 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
         setIdeas((prev) =>
           prev.map((idea) =>
             idea.id === ideaId
-              ? { ...idea, clientApproval: decision, clientFeedback: feedback }
+              ? {
+                  ...idea,
+                  clientApproval: decision,
+                  clientFeedback: feedback,
+                  // Aprobar avanza la pieza (igual que approve_idea en la base).
+                  status: decision === "aprobada" ? "aprobada" : idea.status,
+                }
               : idea,
           ),
         );

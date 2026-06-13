@@ -53,7 +53,8 @@ export default function AgencyDashboardPage() {
 
   const activeIdeas = ideas.filter(isIdeaActive);
   const inProduction = ideas.filter((i) => i.status === "en_produccion");
-  const inReview = ideas.filter((i) => i.status === "en_revision");
+  const inReviewInternal = ideas.filter((i) => i.status === "en_revision_interna");
+  const awaitingClient = ideas.filter((i) => i.status === "en_revision_cliente");
   const scheduled = ideas.filter((i) => i.status === "programada");
   const published = publishedThisMonth(ideas);
   const openTasks = tasks.filter(isTaskOpen);
@@ -74,7 +75,9 @@ export default function AgencyDashboardPage() {
     .map((i) => ({ idea: i, date: ideaDate(i) }))
     .filter(
       (x): x is { idea: (typeof ideas)[number]; date: string } =>
-        Boolean(x.date) && x.date! >= today && x.idea.status !== "publicada",
+        Boolean(x.date) &&
+        x.date! >= today &&
+        !["publicada", "pausada", "archivada"].includes(x.idea.status),
     )
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 6);
@@ -89,7 +92,13 @@ export default function AgencyDashboardPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Ideas activas" value={activeIdeas.length} icon={Lightbulb} tone="flare" />
         <StatCard label="En producción" value={inProduction.length} icon={Clapperboard} />
-        <StatCard label="En revisión" value={inReview.length} icon={Eye} />
+        <StatCard label="Revisión interna" value={inReviewInternal.length} icon={Eye} />
+        <StatCard
+          label="Esperando cliente"
+          value={awaitingClient.length}
+          icon={Eye}
+          tone={awaitingClient.length ? "warning" : "default"}
+        />
         <StatCard label="Programados" value={scheduled.length} icon={CalendarDays} />
         <StatCard
           label="Publicados este mes"

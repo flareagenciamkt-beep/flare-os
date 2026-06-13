@@ -41,7 +41,9 @@ export default function AgencyMetricsPage() {
   const activeClients = clients.filter((c) => c.status === "activo");
   const activeIdeas = ideas.filter(isIdeaActive);
   const inProduction = ideas.filter((i) => i.status === "en_produccion");
-  const inReview = ideas.filter((i) => i.status === "en_revision");
+  const inReview = ideas.filter(
+    (i) => i.status === "en_revision_interna" || i.status === "en_revision_cliente",
+  );
   const scheduled = ideas.filter((i) => i.status === "programada");
   const published = publishedThisMonth(ideas);
   const openTasks = tasks.filter(isTaskOpen);

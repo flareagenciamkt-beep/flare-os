@@ -32,16 +32,21 @@ interface TaskFormDialogProps {
   onOpenChange: (open: boolean) => void;
   task?: Task | null;
   defaultClientId?: string | null;
+  defaultIdeaId?: string; // crear tarea desde un contenido
+  defaultMeetingId?: string; // crear tarea desde una reunión
 }
 
 function toValues(
   task: Task | null | undefined,
   defaultClientId: string | null | undefined,
+  defaultIdeaId: string | undefined,
+  defaultMeetingId: string | undefined,
 ): TaskFormValues {
   if (task) {
     return {
       clientId: task.clientId ?? "none",
       ideaId: task.ideaId ?? "none",
+      meetingId: task.meetingId ?? "none",
       title: task.title,
       description: task.description,
       status: task.status,
@@ -55,7 +60,8 @@ function toValues(
   }
   return {
     clientId: defaultClientId ?? "none",
-    ideaId: "none",
+    ideaId: defaultIdeaId ?? "none",
+    meetingId: defaultMeetingId ?? "none",
     title: "",
     description: "",
     status: "pendiente",
@@ -73,36 +79,53 @@ export function TaskFormDialog({
   onOpenChange,
   task,
   defaultClientId,
+  defaultIdeaId,
+  defaultMeetingId,
 }: TaskFormDialogProps) {
-  const { addTask, updateTask, ideas } = useFlare();
+  const { addTask, updateTask, ideas, meetings } = useFlare();
   const clientOptions = useClientOptions();
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
-    defaultValues: toValues(task, defaultClientId),
+    defaultValues: toValues(task, defaultClientId, defaultIdeaId, defaultMeetingId),
   });
   const { register, control, handleSubmit, reset, formState } = form;
   const errors = formState.errors;
 
   React.useEffect(() => {
-    if (open) reset(toValues(task, defaultClientId));
-  }, [open, task, defaultClientId, reset]);
+    if (open) reset(toValues(task, defaultClientId, defaultIdeaId, defaultMeetingId));
+  }, [open, task, defaultClientId, defaultIdeaId, defaultMeetingId, reset]);
 
   const selectedClientId = useWatch({ control, name: "clientId" });
   const ideaOptions = React.useMemo(() => {
     const wanted = selectedClientId === "none" ? null : selectedClientId;
     const relevant = ideas.filter((i) => i.clientId === wanted);
     return [
-      { value: "none", label: "Sin idea asociada" },
+      { value: "none", label: "Sin contenido asociado" },
       ...relevant.map((i) => ({ value: i.id, label: i.title })),
     ];
   }, [ideas, selectedClientId]);
+
+  const meetingOptions = React.useMemo(() => {
+    const relevant =
+      selectedClientId === "none"
+        ? []
+        : meetings.filter((m) => m.clientId === selectedClientId);
+    return [
+      { value: "none", label: "Sin reunión asociada" },
+      ...relevant.map((m) => ({
+        value: m.id,
+        label: `${m.type || "Reunión"} · ${m.meetingDate}`,
+      })),
+    ];
+  }, [meetings, selectedClientId]);
 
   const onSubmit = handleSubmit((values) => {
     const data = {
       ...values,
       clientId: nullableClientId(values.clientId),
       ideaId: values.ideaId === "none" ? null : values.ideaId,
+      meetingId: values.meetingId === "none" ? null : values.meetingId,
       dueDate: nullableDate(values.dueDate),
     };
     if (task) {
@@ -134,8 +157,15 @@ export function TaskFormDialog({
         <RHFSelect
           control={control}
           name="ideaId"
-          label="Idea asociada"
+          label="Contenido asociado"
           options={ideaOptions}
+        />
+        <RHFSelect
+          control={control}
+          name="meetingId"
+          label="Reunión asociada"
+          options={meetingOptions}
+          className="sm:col-span-2"
         />
         <Field label="Título" error={errors.title?.message} className="sm:col-span-2">
           <Input {...register("title")} placeholder="Ej: Diseñar carrusel de testimonios" />

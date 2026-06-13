@@ -1,6 +1,7 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import * as React from "react";
+import { CheckSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -27,11 +28,15 @@ import {
   PriorityBadge,
 } from "@/components/shared/badges";
 import { EmptyState } from "@/components/shared/empty-state";
+import { TaskFormDialog } from "@/components/forms/task-form";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
-import { ideaDate } from "@/lib/stats";
-import { IDEA_STATUS_LABELS, KANBAN_COLUMNS, type Idea } from "@/lib/types";
+import { ideaDate, isIdeaOverdue } from "@/lib/stats";
+import { cn } from "@/lib/utils";
+import { IDEA_STATUS_LABELS, optionsFromLabels, type Idea } from "@/lib/types";
 import { Lightbulb } from "lucide-react";
+
+const ALL_STATUSES = optionsFromLabels(IDEA_STATUS_LABELS);
 
 interface IdeasTableProps {
   ideas: Idea[];
@@ -41,6 +46,9 @@ interface IdeasTableProps {
 
 export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps) {
   const { clientName, deleteIdea, moveIdea } = useFlare();
+  // "Crear tarea desde contenido": el diálogo vive aquí para que funcione
+  // en todas las vistas que usan esta tabla sin tocar cada página.
+  const [taskFromIdea, setTaskFromIdea] = React.useState<Idea | null>(null);
 
   if (!ideas.length) {
     return (
@@ -98,8 +106,16 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
                   <ChannelBadge channel={idea.channel} />
                 </div>
               </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
+              <TableCell
+                className={cn(
+                  "text-xs",
+                  isIdeaOverdue(idea)
+                    ? "font-medium text-red-400"
+                    : "text-muted-foreground",
+                )}
+              >
                 {formatDate(ideaDate(idea))}
+                {isIdeaOverdue(idea) && " · vencida"}
               </TableCell>
               <TableCell className="text-xs">{idea.responsible}</TableCell>
               <TableCell>
@@ -113,11 +129,17 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
                     <DropdownMenuItem onClick={() => onEdit(idea)}>
                       <Pencil /> Editar
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTaskFromIdea(idea)}>
+                      <CheckSquare /> Crear tarea
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel>Mover a</DropdownMenuLabel>
-                    {KANBAN_COLUMNS.filter((s) => s !== idea.status).map((s) => (
-                      <DropdownMenuItem key={s} onClick={() => moveIdea(idea.id, s)}>
-                        {IDEA_STATUS_LABELS[s]}
+                    {ALL_STATUSES.filter((s) => s.value !== idea.status).map((s) => (
+                      <DropdownMenuItem
+                        key={s.value}
+                        onClick={() => moveIdea(idea.id, s.value)}
+                      >
+                        {s.label}
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
@@ -137,6 +159,15 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
           ))}
         </TableBody>
       </Table>
+
+      <TaskFormDialog
+        open={taskFromIdea !== null}
+        onOpenChange={(open) => {
+          if (!open) setTaskFromIdea(null);
+        }}
+        defaultClientId={taskFromIdea?.clientId ?? null}
+        defaultIdeaId={taskFromIdea?.id}
+      />
     </div>
   );
 }

@@ -18,9 +18,12 @@ const STATUS_DOT: Record<IdeaStatus, string> = {
   idea: "bg-zinc-400",
   validada: "bg-sky-400",
   en_produccion: "bg-flare",
-  en_revision: "bg-violet-400",
+  en_revision_interna: "bg-violet-400",
+  en_revision_cliente: "bg-fuchsia-400",
+  aprobada: "bg-teal-400",
   programada: "bg-amber-400",
   publicada: "bg-emerald-400",
+  pausada: "bg-orange-400",
   archivada: "bg-zinc-600",
 };
 

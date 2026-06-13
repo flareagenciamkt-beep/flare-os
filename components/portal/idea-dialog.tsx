@@ -31,7 +31,11 @@ function ApprovalActions({ idea, onDone }: { idea: Idea; onDone: () => void }) {
   const [sending, setSending] = React.useState(false);
   const approval = idea.clientApproval ?? "pendiente";
 
-  if (idea.status !== "en_revision") return null;
+  // Visible mientras espera revisión del cliente, y también justo después de
+  // aprobar (la pieza pasa a estado "aprobada" y mostramos la confirmación).
+  const inClientReview = idea.status === "en_revision_cliente";
+  const justApproved = idea.status === "aprobada" && approval === "aprobada";
+  if (!inClientReview && !justApproved) return null;
 
   if (approval !== "pendiente") {
     return (

@@ -39,7 +39,106 @@ export interface Client {
   nextAction: string;
   importantLinks: ClientLink[];
   internalNotes: string;
+  // Relación comercial y planificación (V1.1)
+  monthlyFee: number;
+  currency: string;
+  startDate: string | null;
+  activeServices: string[];
+  activeChannels: string[];
+  nextDeliverable: string;
   lastUpdate: string; // ISO date
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Vista 360 (V1.1) ───────────────────────────────────────────────────────
+
+export interface ClientStrategy {
+  id: string;
+  clientId: string;
+  brandBrief: string;
+  targetAudience: string;
+  offer: string;
+  tone: string;
+  brandPromise: string;
+  differentiators: string;
+  competitors: string;
+  doGuidelines: string;
+  dontGuidelines: string;
+  strategicNotes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type NoteType =
+  | "general"
+  | "reunion"
+  | "feedback"
+  | "problema"
+  | "decision"
+  | "recordatorio"
+  | "estrategia";
+
+export interface ClientNote {
+  id: string;
+  clientId: string;
+  title: string;
+  content: string;
+  type: NoteType;
+  isPinned: boolean;
+  responsible: string;
+  relatedEntityType: string;
+  relatedEntityId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AccessStatus =
+  | "pendiente"
+  | "solicitado"
+  | "recibido"
+  | "validado"
+  | "problema";
+
+export interface ClientAccess {
+  id: string;
+  clientId: string;
+  platform: string;
+  usernameOrEmail: string;
+  url: string;
+  status: AccessStatus;
+  responsible: string;
+  requiresSensitiveAccess: boolean;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientMeeting {
+  id: string;
+  clientId: string;
+  meetingDate: string;
+  type: string;
+  participants: string;
+  topics: string;
+  decisions: string;
+  pendingItems: string;
+  nextMeetingDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaymentStatus = "pendiente" | "pagado" | "vencido" | "parcial";
+
+export interface ClientBilling {
+  id: string;
+  clientId: string;
+  monthlyFee: number;
+  currency: string;
+  paymentStatus: PaymentStatus;
+  billingDate: string | null;
+  includedServices: string;
+  observations: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,9 +156,12 @@ export type IdeaStatus =
   | "idea"
   | "validada"
   | "en_produccion"
-  | "en_revision"
+  | "en_revision_interna"
+  | "en_revision_cliente"
+  | "aprobada"
   | "programada"
   | "publicada"
+  | "pausada"
   | "archivada";
 export type IdeaFormat =
   | "carrusel"
@@ -99,6 +201,11 @@ export interface Idea {
   notes: string;
   prompt: string;
   references: string;
+  // Producción (V1.2)
+  copy?: string;
+  script?: string;
+  designNotes?: string;
+  externalUrl?: string;
   coverImage?: string; // URL de la pieza/diseño para la vista previa del feed
   // Aprobación desde el portal de clientes (opcional: mocks y forms no la tocan)
   clientApproval?: ClientApproval;
@@ -117,10 +224,12 @@ export type TaskStatus =
 export type TaskArea =
   | "contenido"
   | "diseno"
+  | "copy"
   | "pauta"
   | "web"
   | "automatizacion"
   | "estrategia"
+  | "cuenta"
   | "ventas"
   | "otro";
 
@@ -128,6 +237,7 @@ export interface Task {
   id: string;
   clientId: string | null;
   ideaId: string | null;
+  meetingId?: string | null; // V1.2: relación opcional con reunión
   title: string;
   description: string;
   status: TaskStatus;
@@ -142,6 +252,11 @@ export interface Task {
 }
 
 export type ResourceType =
+  | "logo"
+  | "brandbook"
+  | "foto"
+  | "video"
+  | "documento"
   | "prompt"
   | "sop"
   | "plantilla"
@@ -232,6 +347,8 @@ export interface ClientMetric {
   periodYear: number;
   instagramFollowers: number;
   monthlyReach: number;
+  impressions: number;
+  clicks: number;
   interactions: number;
   leadsGenerated: number;
   whatsappClicks: number;
@@ -283,9 +400,12 @@ export const IDEA_STATUS_LABELS: Record<IdeaStatus, string> = {
   idea: "Idea",
   validada: "Validada",
   en_produccion: "En producción",
-  en_revision: "En revisión",
+  en_revision_interna: "Revisión interna",
+  en_revision_cliente: "Revisión cliente",
+  aprobada: "Aprobada",
   programada: "Programada",
   publicada: "Publicada",
+  pausada: "Pausada",
   archivada: "Archivada",
 };
 
@@ -334,15 +454,22 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
 export const AREA_LABELS: Record<TaskArea, string> = {
   contenido: "Contenido",
   diseno: "Diseño",
+  copy: "Copy",
   pauta: "Pauta",
   web: "Web",
   automatizacion: "Automatización",
   estrategia: "Estrategia",
+  cuenta: "Cuenta",
   ventas: "Ventas",
   otro: "Otro",
 };
 
 export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
+  logo: "Logo",
+  brandbook: "Brandbook",
+  foto: "Foto",
+  video: "Video",
+  documento: "Documento",
   prompt: "Prompt",
   sop: "SOP",
   plantilla: "Plantilla",
@@ -371,20 +498,50 @@ export const PROCESS_STATUS_LABELS: Record<ProcessStatus, string> = {
   archivado: "Archivado",
 };
 
+export const NOTE_TYPE_LABELS: Record<NoteType, string> = {
+  general: "General",
+  reunion: "Reunión",
+  feedback: "Feedback",
+  problema: "Problema",
+  decision: "Decisión",
+  recordatorio: "Recordatorio",
+  estrategia: "Estrategia",
+};
+
+export const ACCESS_STATUS_LABELS: Record<AccessStatus, string> = {
+  pendiente: "Pendiente",
+  solicitado: "Solicitado",
+  recibido: "Recibido",
+  validado: "Validado",
+  problema: "Problema",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pendiente: "Pendiente",
+  pagado: "Pagado",
+  vencido: "Vencido",
+  parcial: "Parcial",
+};
+
+export const CURRENCY_OPTIONS = ["USD", "COP", "EUR", "MXN"] as const;
+
 export const CLIENT_APPROVAL_LABELS: Record<ClientApproval, string> = {
   pendiente: "Pendiente de aprobación",
   aprobada: "Aprobada por cliente",
   cambios_solicitados: "Cambios solicitados",
 };
 
+// Columnas del kanban: el flujo principal de producción.
+// "pausada" y "archivada" no son columnas: se llega vía menú "Mover a".
 export const KANBAN_COLUMNS: IdeaStatus[] = [
   "idea",
   "validada",
   "en_produccion",
-  "en_revision",
+  "en_revision_interna",
+  "en_revision_cliente",
+  "aprobada",
   "programada",
   "publicada",
-  "archivada",
 ];
 
 export const TEAM_MEMBERS = ["Juan", "Sara", "Andrés", "Laura"] as const;
