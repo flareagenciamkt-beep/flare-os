@@ -17,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -85,12 +86,14 @@ function KanbanCard({
               <Pencil /> Editar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Mover a</DropdownMenuLabel>
-            {ALL_STATUSES.filter((s) => s.value !== idea.status).map((s) => (
-              <DropdownMenuItem key={s.value} onClick={() => moveIdea(idea.id, s.value)}>
-                {s.label}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Mover a</DropdownMenuLabel>
+              {ALL_STATUSES.filter((s) => s.value !== idea.status).map((s) => (
+                <DropdownMenuItem key={s.value} onClick={() => moveIdea(idea.id, s.value)}>
+                  {s.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"

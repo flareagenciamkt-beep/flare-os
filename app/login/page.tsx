@@ -6,6 +6,31 @@ import Image from "next/image";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { getOwnProfile } from "@/lib/profile";
 
+// Configuración determinista (evita desajustes de hidratación SSR/cliente).
+const EMBERS = [
+  { left: "6%", size: 5, delay: "0s", dur: "8s", drift: "40px" },
+  { left: "13%", size: 3, delay: "2.4s", dur: "9.5s", drift: "-30px" },
+  { left: "21%", size: 4, delay: "1.1s", dur: "7.5s", drift: "26px" },
+  { left: "29%", size: 6, delay: "3.6s", dur: "10s", drift: "-44px" },
+  { left: "37%", size: 3, delay: "0.7s", dur: "8.8s", drift: "34px" },
+  { left: "45%", size: 5, delay: "4.2s", dur: "9s", drift: "-20px" },
+  { left: "53%", size: 4, delay: "1.8s", dur: "7.8s", drift: "48px" },
+  { left: "61%", size: 6, delay: "3s", dur: "10.5s", drift: "-36px" },
+  { left: "69%", size: 3, delay: "0.4s", dur: "8.2s", drift: "30px" },
+  { left: "77%", size: 5, delay: "2.9s", dur: "9.2s", drift: "-42px" },
+  { left: "85%", size: 4, delay: "1.4s", dur: "7.6s", drift: "24px" },
+  { left: "92%", size: 6, delay: "4.6s", dur: "10.2s", drift: "-28px" },
+  { left: "34%", size: 3, delay: "5.5s", dur: "8.4s", drift: "38px" },
+  { left: "58%", size: 4, delay: "6s", dur: "9.6s", drift: "-32px" },
+];
+
+const STREAKS = [
+  { top: "18%", delay: "0s", dur: "6s", tilt: "16deg" },
+  { top: "44%", delay: "2.6s", dur: "7.4s", tilt: "-10deg" },
+  { top: "68%", delay: "4.3s", dur: "5.6s", tilt: "12deg" },
+  { top: "82%", delay: "6.5s", dur: "6.8s", tilt: "-14deg" },
+];
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = React.useState("");
@@ -48,37 +73,72 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden" style={{ background: "radial-gradient(140% 100% at 50% 120%, rgba(245,42,108,0.12), transparent 55%), #080606" }}>
-      {/* Aurora glows */}
-      <div className="pointer-events-none absolute bottom-[-520px] left-1/2 h-[940px] w-[1560px] animate-aurora" style={{ transform: "translateX(-50%)", background: "radial-gradient(closest-side, rgba(245,42,108,0.30), rgba(254,78,73,0.12) 48%, rgba(255,106,53,0.04) 66%, transparent 76%)", filter: "blur(8px)" }} />
-      <div className="pointer-events-none absolute bottom-[-360px] left-1/2 h-[620px] w-[880px]" style={{ transform: "translateX(-50%)", background: "radial-gradient(closest-side, rgba(255,106,53,0.22), transparent 70%)", animation: "aurora-shift 14s ease-in-out infinite reverse" }} />
-      <div className="pointer-events-none absolute -right-[300px] -top-[320px] h-[760px] w-[760px]" style={{ background: "radial-gradient(closest-side, rgba(142,91,255,0.10), transparent 70%)" }} />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden" style={{ background: "radial-gradient(140% 100% at 50% 120%, rgba(245,42,108,0.14), transparent 55%), #080606" }}>
+      {/* Resplandor base que respira */}
+      <div className="pointer-events-none absolute bottom-[-520px] left-1/2 h-[940px] w-[1560px] animate-breathe" style={{ background: "radial-gradient(closest-side, rgba(245,42,108,0.32), rgba(254,78,73,0.12) 48%, rgba(255,106,53,0.04) 66%, transparent 76%)", filter: "blur(8px)" }} />
+      <div className="pointer-events-none absolute bottom-[-360px] left-1/2 h-[620px] w-[880px]" style={{ transform: "translateX(-50%)", background: "radial-gradient(closest-side, rgba(255,106,53,0.24), transparent 70%)", animation: "aurora-shift 12s ease-in-out infinite reverse" }} />
+      <div className="pointer-events-none absolute -right-[280px] -top-[300px] h-[760px] w-[760px] animate-aurora" style={{ background: "radial-gradient(closest-side, rgba(142,91,255,0.14), transparent 70%)" }} />
+      <div className="pointer-events-none absolute -left-[320px] top-[40%] h-[600px] w-[600px]" style={{ background: "radial-gradient(closest-side, rgba(245,42,108,0.12), transparent 70%)", animation: "aurora-shift 16s ease-in-out infinite" }} />
 
-      {/* Grid overlay */}
-      <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(241,233,224,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(241,233,224,0.025) 1px, transparent 1px)", backgroundSize: "64px 64px", maskImage: "radial-gradient(120% 70% at 50% 100%, #000 20%, transparent 70%)", WebkitMaskImage: "radial-gradient(120% 70% at 50% 100%, #000 20%, transparent 70%)" }} />
+      {/* Línea de horizonte pulsante */}
+      <div className="pointer-events-none absolute bottom-[23%] left-0 right-0 h-px animate-flicker" style={{ background: "linear-gradient(90deg, transparent 6%, rgba(245,42,108,0.5), rgba(255,106,53,0.45) 55%, transparent 94%)", boxShadow: "0 0 24px rgba(245,42,108,0.45)" }} />
 
-      {/* Horizon line */}
-      <div className="pointer-events-none absolute bottom-[23%] left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent 6%, rgba(245,42,108,0.45), rgba(255,106,53,0.4) 55%, transparent 94%)", boxShadow: "0 0 24px rgba(245,42,108,0.4)" }} />
+      {/* Brasas ascendentes */}
+      {EMBERS.map((e, i) => (
+        <span
+          key={`ember-${i}`}
+          className="pointer-events-none absolute bottom-[-24px] rounded-full"
+          style={{
+            left: e.left,
+            width: e.size,
+            height: e.size,
+            background: "linear-gradient(180deg, #FF8A4C, #F52A6C)",
+            boxShadow: "0 0 8px rgba(255,106,53,0.85)",
+            animation: `ember-rise ${e.dur} linear ${e.delay} infinite`,
+            "--drift": e.drift,
+          } as React.CSSProperties}
+        />
+      ))}
 
-      {/* Twinkling stars */}
-      <span className="absolute left-[15%] top-[22%] text-[13px] animate-twinkle" style={{ color: "rgba(245,42,108,0.5)" }}>✦</span>
-      <span className="absolute right-[19%] top-[31%] text-[9px]" style={{ color: "rgba(255,106,53,0.45)", animation: "twinkle 5.5s ease-in-out infinite 0.6s" }}>✦</span>
-      <span className="absolute bottom-[30%] left-[24%] text-[11px]" style={{ color: "rgba(254,78,73,0.4)", animation: "twinkle 6s ease-in-out infinite 1.4s" }}>✦</span>
-      <span className="absolute bottom-[20%] right-[13%] text-[15px]" style={{ color: "rgba(245,42,108,0.3)", animation: "twinkle 5s ease-in-out infinite 0.3s" }}>✦</span>
-      <span className="absolute left-[38%] top-[14%] text-[8px]" style={{ color: "rgba(255,106,53,0.35)", animation: "twinkle 7s ease-in-out infinite 2s" }}>✦</span>
+      {/* Rayos de luz que cruzan */}
+      {STREAKS.map((s, i) => (
+        <span
+          key={`streak-${i}`}
+          className="pointer-events-none absolute left-0 h-px w-[220px]"
+          style={{
+            top: s.top,
+            background:
+              "linear-gradient(90deg, transparent, rgba(255,138,76,0.95), rgba(245,42,108,0.6), transparent)",
+            filter: "blur(0.5px)",
+            animation: `streak-cross ${s.dur} ease-in ${s.delay} infinite`,
+            "--tilt": s.tilt,
+          } as React.CSSProperties}
+        />
+      ))}
+
+      {/* Destellos parpadeantes */}
+      <span className="absolute left-[15%] top-[22%] text-[14px] animate-twinkle" style={{ color: "rgba(245,42,108,0.6)" }}>✦</span>
+      <span className="absolute right-[19%] top-[31%] text-[10px]" style={{ color: "rgba(255,106,53,0.5)", animation: "twinkle 5.5s ease-in-out infinite 0.6s" }}>✦</span>
+      <span className="absolute bottom-[30%] left-[24%] text-[12px]" style={{ color: "rgba(254,78,73,0.45)", animation: "twinkle 6s ease-in-out infinite 1.4s" }}>✦</span>
+      <span className="absolute bottom-[20%] right-[13%] text-[16px]" style={{ color: "rgba(245,42,108,0.4)", animation: "twinkle 5s ease-in-out infinite 0.3s" }}>✦</span>
+      <span className="absolute left-[42%] top-[12%] text-[9px]" style={{ color: "rgba(255,106,53,0.4)", animation: "twinkle 7s ease-in-out infinite 2s" }}>✦</span>
+      <span className="absolute right-[34%] bottom-[14%] text-[11px]" style={{ color: "rgba(142,91,255,0.4)", animation: "twinkle 6.5s ease-in-out infinite 1s" }}>✦</span>
 
       {/* Login card */}
       <div className="animate-fade-up relative z-10 flex w-[432px] flex-col items-center">
         {/* Logo */}
         <div className="relative mb-[30px] flex items-center justify-center">
-          <div className="animate-glow-pulse absolute h-[200px] w-[320px]" style={{ background: "radial-gradient(closest-side, rgba(245,42,108,0.28), rgba(255,106,53,0.06) 55%, transparent 72%)", filter: "blur(6px)" }} />
+          <div className="animate-glow-pulse absolute h-[200px] w-[320px]" style={{ background: "radial-gradient(closest-side, rgba(245,42,108,0.30), rgba(255,106,53,0.06) 55%, transparent 72%)", filter: "blur(6px)" }} />
+          {/* Anillos que emanan del logo */}
+          <span className="pointer-events-none absolute h-[120px] w-[120px] rounded-full" style={{ border: "1px solid rgba(245,42,108,0.45)", animation: "flare-ring 3.4s ease-out infinite" }} />
+          <span className="pointer-events-none absolute h-[120px] w-[120px] rounded-full" style={{ border: "1px solid rgba(255,106,53,0.4)", animation: "flare-ring 3.4s ease-out 1.7s infinite" }} />
           <Image
-            src="/logo-flare.png"
+            src="/flare-logo-v2.png"
             alt="flare"
-            width={248}
-            height={150}
+            width={240}
+            height={160}
             className="relative"
-            style={{ mixBlendMode: "screen", filter: "drop-shadow(0 6px 30px rgba(245,42,108,0.35))" }}
+            style={{ filter: "drop-shadow(0 6px 30px rgba(245,42,108,0.35))" }}
             priority
           />
         </div>
@@ -89,15 +149,15 @@ export default function LoginPage() {
           <div className="absolute left-6 right-6 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(245,42,108,0.6), rgba(255,106,53,0.5), transparent)" }} />
 
           <div className="mb-[26px] flex flex-col items-center">
-            <span className="mb-3 font-mono text-[9px] uppercase tracking-[2.6px]" style={{ color: "#8E5BFF" }}>ACCESO PRIVADO</span>
-            <h1 className="mb-2 text-center text-[30px] font-extrabold leading-tight tracking-tight" style={{ fontFamily: "var(--font-bricolage), sans-serif", letterSpacing: "-0.6px" }}>Welcome to FLARE OS</h1>
-            <p className="text-[15px]" style={{ color: "#B8AFA5" }}>Your creative command center.</p>
+            <span className="mb-3 text-[12px] font-medium" style={{ color: "#8E5BFF" }}>Acceso privado</span>
+            <h1 className="mb-2 text-center text-[32px] font-semibold leading-tight" style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.3px" }}>Bienvenido a Flare OS</h1>
+            <p className="text-[15px]" style={{ color: "#B8AFA5" }}>Tu centro de operaciones creativo.</p>
           </div>
 
           {isSupabaseConfigured ? (
             <form onSubmit={onSubmit} className="flex w-full flex-col gap-[15px]">
               <div className="flex flex-col gap-[7px]">
-                <label className="font-mono text-[10px] uppercase tracking-[1.6px]" style={{ color: "#8a827a" }}>EMAIL</label>
+                <label className="text-[12px] font-medium" style={{ color: "#8a827a" }}>Email</label>
                 <input
                   type="email"
                   value={email}
@@ -110,7 +170,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="flex flex-col gap-[7px]">
-                <label className="font-mono text-[10px] uppercase tracking-[1.6px]" style={{ color: "#8a827a" }}>PASSWORD</label>
+                <label className="text-[12px] font-medium" style={{ color: "#8a827a" }}>Contraseña</label>
                 <input
                   type="password"
                   value={password}
@@ -159,10 +219,10 @@ export default function LoginPage() {
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-[26px] left-0 right-0 flex items-center justify-center gap-2.5 font-mono text-[9.5px] uppercase tracking-[1.8px]" style={{ color: "#5a534d" }}>
-        <span>FLARE OS · V1.0</span>
+      <div className="absolute bottom-[26px] left-0 right-0 flex items-center justify-center gap-2.5 text-[12px]" style={{ color: "#5a534d" }}>
+        <span>Flare OS · V1.0</span>
         <span>—</span>
-        <span>LO QUE SE MIDE, SE CONTROLA</span>
+        <span>Lo que se mide, se controla</span>
       </div>
     </div>
   );

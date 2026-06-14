@@ -24,7 +24,7 @@ function PortalShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
+        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-4 md:gap-4 md:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-flare">
               <Flame className="size-4 text-white" />
@@ -74,7 +74,7 @@ function PortalShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-6 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-5xl px-4 py-5 md:px-6 md:py-6">{children}</main>
     </div>
   );
 }

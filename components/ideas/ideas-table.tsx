@@ -16,6 +16,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -62,7 +63,7 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <Table>
+      <Table className="min-w-[56rem]">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead>Idea</TableHead>
@@ -133,15 +134,17 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
                       <CheckSquare /> Crear tarea
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Mover a</DropdownMenuLabel>
-                    {ALL_STATUSES.filter((s) => s.value !== idea.status).map((s) => (
-                      <DropdownMenuItem
-                        key={s.value}
-                        onClick={() => moveIdea(idea.id, s.value)}
-                      >
-                        {s.label}
-                      </DropdownMenuItem>
-                    ))}
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Mover a</DropdownMenuLabel>
+                      {ALL_STATUSES.filter((s) => s.value !== idea.status).map((s) => (
+                        <DropdownMenuItem
+                          key={s.value}
+                          onClick={() => moveIdea(idea.id, s.value)}
+                        >
+                          {s.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"

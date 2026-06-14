@@ -95,7 +95,7 @@
   --flare-coral: #FE4E49;
   --success: #3DD68C;
   --warning: #FFC247;
-  --font-heading: var(--font-bricolage);
+  --font-heading: var(--font-display);
 }
 
 @layer base {
@@ -169,6 +169,38 @@
   0% { transform: translateX(-120%); }
   100% { transform: translateX(320%); }
 }
+/* Brasas que ascienden y se desvanecen, con deriva lateral */
+@keyframes ember-rise {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  8% { opacity: 1; }
+  85% { opacity: 0.85; }
+  100% { transform: translateY(-78vh) translateX(var(--drift, 24px)) scale(0.25); opacity: 0; }
+}
+/* Rayo de luz que cruza en diagonal */
+@keyframes streak-cross {
+  0% { transform: translateX(-40vw) rotate(var(--tilt, 16deg)); opacity: 0; }
+  12% { opacity: 0.95; }
+  55% { opacity: 0.6; }
+  100% { transform: translateX(140vw) rotate(var(--tilt, 16deg)); opacity: 0; }
+}
+/* Anillo que emana del logo */
+@keyframes flare-ring {
+  0% { transform: scale(0.55); opacity: 0.65; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+/* Parpadeo irregular tipo llama */
+@keyframes flicker {
+  0%, 100% { opacity: 0.9; }
+  20% { opacity: 0.45; }
+  45% { opacity: 1; }
+  70% { opacity: 0.6; }
+  85% { opacity: 0.95; }
+}
+/* Latido del resplandor de fondo */
+@keyframes breathe {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.85; }
+  50% { transform: translateX(-50%) scale(1.12); opacity: 1; }
+}
 
 .animate-fade-up {
   animation: fadeUp 0.5s ease both;
@@ -191,6 +223,12 @@
 }
 .animate-glow-pulse {
   animation: glow-pulse 6s ease-in-out infinite;
+}
+.animate-flicker {
+  animation: flicker 3.2s ease-in-out infinite;
+}
+.animate-breathe {
+  animation: breathe 7s ease-in-out infinite;
 }
 
 .flare-gradient {

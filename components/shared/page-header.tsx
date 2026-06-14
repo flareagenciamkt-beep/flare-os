@@ -9,13 +9,13 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div className="flex flex-col gap-[5px]">
         <h1
-          className="text-[25px] font-extrabold tracking-tight"
-          style={{ fontFamily: "var(--font-bricolage), sans-serif", letterSpacing: "-0.6px" }}
+          className="text-[27px] font-semibold"
+          style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.2px" }}
         >
           {title}
         </h1>
         {description && (
-          <p className="font-mono text-[10px] uppercase tracking-[1.8px]" style={{ color: "#8a827a" }}>
+          <p className="max-w-2xl text-[13px] leading-relaxed" style={{ color: "#8a827a" }}>
             {description}
           </p>
         )}

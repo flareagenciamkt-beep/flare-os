@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, RHFSelect } from "@/components/shared/form-field";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { useClientOptions } from "@/components/shared/use-client-options";
 import { FormDialog } from "./form-dialog";
 import { useFlare } from "@/lib/store";
@@ -124,8 +125,14 @@ export function ResourceFormDialog({
           label="Cliente"
           options={clientOptions}
         />
-        <Field label="Link externo">
-          <Input {...register("externalLink")} placeholder="https://..." />
+        <Field label="Archivo / imagen (sube o pega un link)" className="sm:col-span-2">
+          <Controller
+            control={control}
+            name="externalLink"
+            render={({ field }) => (
+              <ImageUpload value={field.value} onChange={field.onChange} folder="resources" />
+            )}
+          />
         </Field>
         <Field label="Contenido" className="sm:col-span-2">
           <Textarea rows={5} {...register("content")} />

@@ -1,16 +1,18 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, LogOut, Search } from "lucide-react";
+import { Bell, Menu, LogOut, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFlare } from "@/lib/store";
+import { clientAlerts } from "@/lib/stats";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import * as React from "react";
 
@@ -35,18 +37,18 @@ const SECTION_TITLES: [string, string][] = [
 ];
 
 const SECTION_SUBS: Record<string, string> = {
-  "/clients/dashboard": "RESUMEN GENERAL",
-  "/clients": "DIRECTORIO DE CUENTAS",
-  "/agency/dashboard": "CENTRO OPERATIVO",
-  "/agency/calendar": "PLANIFICACIÓN",
-  "/agency/ideas": "LABORATORIO",
-  "/agency/kanban": "PRODUCCIÓN",
+  "/clients/dashboard": "Resumen general",
+  "/clients": "Directorio de cuentas",
+  "/agency/dashboard": "Centro operativo",
+  "/agency/calendar": "Planificación",
+  "/agency/ideas": "Laboratorio",
+  "/agency/kanban": "Producción",
 };
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { clients } = useFlare();
+  const { clients, ideas, tasks, metrics, accesses } = useFlare();
   const [query, setQuery] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
@@ -58,7 +60,7 @@ export function Header() {
       .then(({ data }) => setUserEmail(data.user?.email ?? null));
   }, []);
 
-  const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "SR";
+  const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "FL";
 
   const clientDetail = pathname.match(/^\/clients\/([^/]+)$/);
   const detailClient =
@@ -73,6 +75,14 @@ export function Header() {
 
   const sub = SECTION_SUBS[pathname] ?? "";
 
+  // Notificaciones reales: clientes activos con alertas operativas.
+  const clientsWithAlerts = clients.filter(
+    (c) =>
+      c.status === "activo" &&
+      clientAlerts(c, ideas, tasks, metrics, accesses).length > 0,
+  );
+  const alertCount = clientsWithAlerts.length;
+
   const results = query.trim()
     ? clients
         .filter(
@@ -84,21 +94,31 @@ export function Header() {
     : [];
 
   return (
-    <header className="flex h-[60px] shrink-0 items-center gap-6 px-[26px]" style={{ borderBottom: "1px solid rgba(241,233,224,0.06)", background: "rgba(12,10,9,0.7)", backdropFilter: "blur(12px)" }}>
+    <header className="flex h-[60px] shrink-0 items-center gap-3 px-4 md:gap-6 md:px-[26px]" style={{ borderBottom: "1px solid rgba(241,233,224,0.06)", background: "rgba(12,10,9,0.7)", backdropFilter: "blur(12px)" }}>
+      {/* Botón de menú (solo móvil) */}
+      <button
+        onClick={onMenuClick}
+        aria-label="Abrir menú"
+        className="flex size-9 shrink-0 items-center justify-center rounded-[10px] md:hidden"
+        style={{ border: "1px solid rgba(241,233,224,0.08)" }}
+      >
+        <Menu className="size-[18px]" style={{ color: "#A39A91" }} />
+      </button>
+
       {/* Title area */}
-      <div className="flex min-w-[230px] items-baseline gap-3">
-        <span className="text-[16.5px] font-bold tracking-tight" style={{ fontFamily: "var(--font-bricolage), sans-serif", letterSpacing: "-0.2px" }}>
+      <div className="flex items-baseline gap-3 md:min-w-[230px]">
+        <span className="truncate text-[16.5px] font-bold tracking-tight" style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.2px" }}>
           {title}
         </span>
         {sub && (
-          <span className="font-mono text-[9.5px] tracking-[1.4px]" style={{ color: "#6e665f" }}>
+          <span className="hidden text-[12px] lg:inline" style={{ color: "#6e665f" }}>
             {sub}
           </span>
         )}
       </div>
 
       {/* Search bar */}
-      <div className="flex flex-1 justify-center">
+      <div className="hidden flex-1 justify-center sm:flex">
         <div className="relative flex w-full max-w-[400px] items-center gap-[9px] rounded-[10px] px-3 py-2 transition-all" style={{ background: "#110E0D", border: "1px solid rgba(241,233,224,0.07)" }}>
           <Search className="size-[13px] shrink-0" style={{ color: "#6e665f" }} />
           <input
@@ -128,7 +148,7 @@ export function Header() {
                   }}
                 >
                   <span className="truncate font-medium">{c.brand}</span>
-                  <span className="ml-auto font-mono text-[9px] tracking-[1px]" style={{ color: "#6e665f" }}>
+                  <span className="ml-auto text-[11px]" style={{ color: "#6e665f" }}>
                     {c.industry}
                   </span>
                 </button>
@@ -139,12 +159,33 @@ export function Header() {
       </div>
 
       {/* Right side: notifications + avatar */}
-      <div className="flex items-center gap-4">
-        {/* Notification bell */}
-        <div className="relative flex size-[34px] cursor-pointer items-center justify-center rounded-[10px] transition-all hover:border-[rgba(241,233,224,0.2)]" style={{ border: "1px solid rgba(241,233,224,0.08)" }}>
+      <div className="ml-auto flex items-center gap-3 md:gap-4">
+        {/* Notification bell — clientes activos con alertas operativas */}
+        <button
+          onClick={() => router.push("/clients/dashboard")}
+          aria-label={
+            alertCount > 0
+              ? `${alertCount} cliente(s) con alertas`
+              : "Sin alertas"
+          }
+          title={
+            alertCount > 0
+              ? `${alertCount} cliente(s) con alertas operativas`
+              : "Sin alertas operativas"
+          }
+          className="relative flex size-[34px] cursor-pointer items-center justify-center rounded-[10px] transition-all hover:border-[rgba(241,233,224,0.2)]"
+          style={{ border: "1px solid rgba(241,233,224,0.08)" }}
+        >
           <Bell className="size-4" style={{ color: "#A39A91" }} />
-          <span className="absolute right-[8px] top-[7px] h-[7px] w-[7px] rounded-full" style={{ background: "linear-gradient(90deg, #F52A6C, #FF6A35)", border: "2px solid #0A0808" }} />
-        </div>
+          {alertCount > 0 && (
+            <span
+              className="absolute -right-[5px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-bold text-white"
+              style={{ background: "linear-gradient(90deg, #F52A6C, #FF6A35)", border: "2px solid #0A0808" }}
+            >
+              {alertCount > 9 ? "9+" : alertCount}
+            </span>
+          )}
+        </button>
 
         <span className="h-[22px] w-px" style={{ background: "rgba(241,233,224,0.08)" }} />
 
@@ -156,14 +197,16 @@ export function Header() {
                 <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring" />
               }
             >
-              <div className="flare-gradient flex size-[30px] items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ fontFamily: "var(--font-bricolage), sans-serif" }}>
+              <div className="flare-gradient flex size-[30px] items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
                 {initials}
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="truncate">
-                {userEmail ?? "Sesión activa"}
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="truncate">
+                  {userEmail ?? "Sesión activa"}
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={async () => {
@@ -176,7 +219,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className="flare-gradient flex size-[30px] cursor-pointer items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ fontFamily: "var(--font-bricolage), sans-serif" }}>
+          <div className="flare-gradient flex size-[30px] cursor-pointer items-center justify-center rounded-full text-[11px] font-extrabold text-white" style={{ fontFamily: "var(--font-display), sans-serif" }}>
             {initials}
           </div>
         )}

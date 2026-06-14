@@ -81,7 +81,7 @@ export function BillingTab({ client }: { client: Client }) {
 
       {records.length ? (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <Table>
+          <Table className="min-w-[56rem]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>Fecha de cobro</TableHead>

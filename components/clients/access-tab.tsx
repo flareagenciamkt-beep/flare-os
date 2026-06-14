@@ -75,7 +75,7 @@ export function AccessTab({ clientId }: { clientId: string }) {
 
       {clientAccesses.length ? (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <Table>
+          <Table className="min-w-[48rem]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>Plataforma</TableHead>

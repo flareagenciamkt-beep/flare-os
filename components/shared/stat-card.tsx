@@ -36,17 +36,17 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "default" }: S
     >
       <div className="absolute left-[22px] right-[22px] top-0 h-[2px]" style={{ background: ACCENT_BARS[tone] }} />
       <div className="flex items-center justify-between gap-2.5">
-        <span className="font-mono text-[9.5px] uppercase tracking-[1.6px]" style={{ color: "#8a827a" }}>
+        <span className="text-[12px] font-medium" style={{ color: "#8a827a" }}>
           {label}
         </span>
         {Icon && <Icon className="size-4" style={{ color: "#6e665f" }} />}
       </div>
       <p
         className={cn(
-          "mt-3.5 text-[40px] font-extrabold leading-[0.9] tracking-tight",
+          "mt-3.5 text-[40px] font-semibold leading-[0.95]",
           TONE_STYLES[tone],
         )}
-        style={{ fontFamily: "var(--font-bricolage), sans-serif", letterSpacing: "-1.5px" }}
+        style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.5px" }}
       >
         {value}
       </p>

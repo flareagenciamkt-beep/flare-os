@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StackedBarChart, TrendChart } from "@/components/shared/charts";
+import { CHART_COLORS, StackedBarChart, TrendChart } from "@/components/shared/charts";
 import { MetricFormDialog } from "@/components/forms/metric-form";
 import { useFlare } from "@/lib/store";
 import { MONTH_LABELS, type ClientMetric } from "@/lib/types";
@@ -100,10 +100,10 @@ export function MetricsCards({ metrics }: { metrics: ClientMetric[] }) {
 
 // Gráficos de evolución mensual (los usan el equipo y el portal).
 const CONTENT_SERIES = [
-  { label: "Posts", color: "#FF704D" },
-  { label: "Reels", color: "#38bdf8" },
-  { label: "Carruseles", color: "#a78bfa" },
-  { label: "Historias", color: "#facc15" },
+  { label: "Posts", color: CHART_COLORS.magenta },
+  { label: "Reels", color: CHART_COLORS.orange },
+  { label: "Carruseles", color: CHART_COLORS.purple },
+  { label: "Historias", color: CHART_COLORS.amber },
 ];
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -136,16 +136,16 @@ export function MetricsCharts({ metrics }: { metrics: ClientMetric[] }) {
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <ChartCard title="Seguidores en Instagram">
-          <TrendChart points={series((m) => m.instagramFollowers)} color="#FF4D2E" />
+          <TrendChart points={series((m) => m.instagramFollowers)} color={CHART_COLORS.magenta} />
         </ChartCard>
         <ChartCard title="Alcance mensual">
-          <TrendChart points={series((m) => m.monthlyReach)} color="#38bdf8" />
+          <TrendChart points={series((m) => m.monthlyReach)} color={CHART_COLORS.purple} />
         </ChartCard>
         <ChartCard title="Interacciones">
-          <TrendChart points={series((m) => m.interactions)} color="#a78bfa" />
+          <TrendChart points={series((m) => m.interactions)} color={CHART_COLORS.orange} />
         </ChartCard>
         <ChartCard title="Leads generados">
-          <TrendChart points={series((m) => m.leadsGenerated)} color="#34d399" />
+          <TrendChart points={series((m) => m.leadsGenerated)} color={CHART_COLORS.green} />
         </ChartCard>
       </div>
 
@@ -168,7 +168,7 @@ export function MetricsCharts({ metrics }: { metrics: ClientMetric[] }) {
         <ChartCard title="Inversión en pauta (USD)">
           <TrendChart
             points={series((m) => m.adSpend)}
-            color="#f59e0b"
+            color={CHART_COLORS.amber}
             valueFormatter={(n) => `$${fmt.format(n)}`}
           />
         </ChartCard>
@@ -191,7 +191,7 @@ export function MetricsTable({
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <Table>
+        <Table className="min-w-[64rem]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>Período</TableHead>

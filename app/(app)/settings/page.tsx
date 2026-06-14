@@ -7,11 +7,12 @@ import { TEAM_MEMBERS } from "@/lib/types";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 const PALETTE = [
-  { name: "Fondo", value: "#0F1115" },
-  { name: "Cards", value: "#171A21" },
-  { name: "Bordes", value: "#272A32" },
-  { name: "Acento", value: "#FF4D2E" },
-  { name: "Acento suave", value: "#FF704D" },
+  { name: "Fondo", value: "#0A0808" },
+  { name: "Cards", value: "#14110F" },
+  { name: "Texto", value: "#F1E9E0" },
+  { name: "Magenta", value: "#F52A6C" },
+  { name: "Coral", value: "#FE4E49" },
+  { name: "Naranja", value: "#FF6A35" },
 ];
 
 export default function SettingsPage() {
@@ -43,7 +44,8 @@ export default function SettingsPage() {
               ))}
             </div>
             <p className="mt-3 text-[11px] text-muted-foreground">
-              La gestión real de usuarios llega con Supabase Auth en Fase 6.
+              Crea usuarios del portal desde la ficha de cada cliente (tab
+              Resumen → Acceso al portal).
             </p>
           </CardContent>
         </Card>
@@ -98,10 +100,12 @@ export default function SettingsPage() {
               Acerca de Flare OS
             </p>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Sistema operativo interno de la agencia Flare. V1: base de clientes,
-              progreso y métricas por cliente, ideas, feed, kanban, calendario
-              editorial, tareas, biblioteca, prompts y procesos. Construido con
-              Next.js, TypeScript, Tailwind y Shadcn UI.
+              Sistema operativo interno de la agencia Flare: base de clientes con
+              vista 360, progreso operativo y métricas con gráficos, ideas, feed,
+              kanban, calendario editorial, tareas, facturación, biblioteca,
+              prompts y procesos, más el portal de aprobaciones para clientes.
+              Construido con Next.js, TypeScript, Tailwind y Shadcn UI sobre
+              Supabase.
             </p>
           </CardContent>
         </Card>

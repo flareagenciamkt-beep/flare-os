@@ -20,6 +20,16 @@ const compact = new Intl.NumberFormat("es-CO", {
 });
 const full = new Intl.NumberFormat("es-CO");
 
+// Paleta de gráficos alineada al sistema visual Flare (warm dark premium).
+export const CHART_COLORS = {
+  magenta: "#F52A6C",
+  coral: "#FE4E49",
+  orange: "#FF6A35",
+  green: "#3DD68C",
+  purple: "#8E5BFF",
+  amber: "#FFC247",
+} as const;
+
 export interface ChartPoint {
   label: string;
   value: number;
@@ -91,7 +101,7 @@ function XLabels({ labels }: { labels: string[] }) {
 
 export function TrendChart({
   points,
-  color = "#FF4D2E",
+  color = CHART_COLORS.magenta,
   valueFormatter = (n: number) => full.format(n),
 }: {
   points: ChartPoint[];
@@ -133,7 +143,7 @@ export function TrendChart({
             height={PLOT_H}
             fill="transparent"
           />
-          <circle cx={x} cy={y} r={3.5} fill="var(--card, #171A21)" stroke={color} strokeWidth={2} />
+          <circle cx={x} cy={y} r={3.5} fill="var(--card, #14110F)" stroke={color} strokeWidth={2} />
         </g>
       ))}
       {/* Valor del último punto siempre visible */}

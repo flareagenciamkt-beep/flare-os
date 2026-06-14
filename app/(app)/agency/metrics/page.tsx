@@ -106,7 +106,7 @@ export default function AgencyMetricsPage() {
           <CardContent className="p-4">
             <p className="mb-3 text-sm font-semibold">Producción por cliente</p>
             <div className="overflow-hidden rounded-lg border border-border">
-              <Table>
+              <Table className="min-w-[56rem]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead>Cliente</TableHead>

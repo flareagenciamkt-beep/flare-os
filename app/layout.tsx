@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Instrument_Sans, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
+// Sans-serif premium y minimalista para títulos.
+const display = Instrument_Sans({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const hanken = Hanken_Grotesk({
@@ -34,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`dark ${bricolage.variable} ${hanken.variable} ${jetbrains.variable} h-full antialiased`}
+      className={`dark ${display.variable} ${hanken.variable} ${jetbrains.variable} h-full antialiased`}
       style={{
         ["--font-sans" as string]: "var(--font-hanken)",
         ["--font-geist-mono" as string]: "var(--font-jetbrains)",

@@ -128,7 +128,7 @@ export default function ClientsBillingPage() {
       <p className="mb-2 mt-6 text-sm font-semibold">Clientes activos</p>
       {active.length ? (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <Table>
+          <Table className="min-w-[56rem]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>Cliente</TableHead>
@@ -211,7 +211,7 @@ export default function ClientsBillingPage() {
         <>
           <p className="mb-2 mt-6 text-sm font-semibold">Cobros recientes</p>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <Table>
+            <Table className="min-w-[56rem]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Cliente</TableHead>

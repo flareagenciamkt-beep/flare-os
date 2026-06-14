@@ -159,7 +159,7 @@ export default function ClientsPage() {
 
       {filtered.length ? (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <Table>
+          <Table className="min-w-[72rem]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>Cliente</TableHead>

@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, RHFSelect } from "@/components/shared/form-field";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { useClientOptions } from "@/components/shared/use-client-options";
 import { FormDialog } from "./form-dialog";
 import { useFlare } from "@/lib/store";
@@ -227,10 +228,13 @@ export function IdeaFormDialog({
         <Field label="Link externo (Canva, Figma, Drive...)">
           <Input {...register("externalUrl")} placeholder="https://..." />
         </Field>
-        <Field label="Imagen de la pieza (URL para la vista previa del feed)" className="sm:col-span-2">
-          <Input
-            {...register("coverImage")}
-            placeholder="URL directa de imagen o link de compartir de Google Drive (público)"
+        <Field label="Imagen de la pieza (para la vista previa del feed)" className="sm:col-span-2">
+          <Controller
+            control={control}
+            name="coverImage"
+            render={({ field }) => (
+              <ImageUpload value={field.value} onChange={field.onChange} folder="pieces" />
+            )}
           />
         </Field>
         <Field label="Notas" className="sm:col-span-2">
