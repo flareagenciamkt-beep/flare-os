@@ -42,3 +42,9 @@ next-env.d.ts
 
 # permitir versionar la plantilla de env (sin credenciales reales)
 !.env.example
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/shots/

@@ -16,6 +16,8 @@ import { clientAlerts } from "@/lib/stats";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import * as React from "react";
 
+const NUM_FMT = new Intl.NumberFormat("es-CO");
+
 const SECTION_TITLES: [string, string][] = [
   ["/clients/dashboard", "Dashboard de clientes"],
   ["/clients/metrics", "Métricas por cliente"],
@@ -48,7 +50,7 @@ const SECTION_SUBS: Record<string, string> = {
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { clients, ideas, tasks, metrics, accesses } = useFlare();
+  const { clients, ideas, tasks, metrics, accesses, billing } = useFlare();
   const [query, setQuery] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
@@ -75,13 +77,42 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
   const sub = SECTION_SUBS[pathname] ?? "";
 
-  // Notificaciones reales: clientes activos con alertas operativas.
-  const clientsWithAlerts = clients.filter(
-    (c) =>
-      c.status === "activo" &&
-      clientAlerts(c, ideas, tasks, metrics, accesses).length > 0,
-  );
-  const alertCount = clientsWithAlerts.length;
+  // Notificaciones reales: una entrada por alerta operativa de cada cliente
+  // activo, más los cobros vencidos. Las críticas (atrasos, vencidos) van primero.
+  const notifs = React.useMemo(() => {
+    const items: {
+      id: string;
+      brand: string;
+      detail: string;
+      href: string;
+      danger: boolean;
+    }[] = [];
+    for (const c of clients) {
+      if (c.status !== "activo") continue;
+      for (const detail of clientAlerts(c, ideas, tasks, metrics, accesses)) {
+        items.push({
+          id: `${c.id}-${detail}`,
+          brand: c.brand,
+          detail,
+          href: `/clients/${c.id}`,
+          danger: /atrasad|cr[ií]tico|vencid/i.test(detail),
+        });
+      }
+    }
+    for (const b of billing) {
+      if (b.paymentStatus !== "vencido") continue;
+      const brand = clients.find((c) => c.id === b.clientId)?.brand ?? "Cliente";
+      items.push({
+        id: `bill-${b.id}`,
+        brand,
+        detail: `Cobro vencido — ${NUM_FMT.format(b.monthlyFee)} ${b.currency}`,
+        href: "/clients/billing",
+        danger: true,
+      });
+    }
+    return items.sort((a, z) => Number(z.danger) - Number(a.danger));
+  }, [clients, ideas, tasks, metrics, accesses, billing]);
+  const alertCount = notifs.length;
 
   const results = query.trim()
     ? clients
@@ -160,32 +191,79 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
       {/* Right side: notifications + avatar */}
       <div className="ml-auto flex items-center gap-3 md:gap-4">
-        {/* Notification bell — clientes activos con alertas operativas */}
-        <button
-          onClick={() => router.push("/clients/dashboard")}
-          aria-label={
-            alertCount > 0
-              ? `${alertCount} cliente(s) con alertas`
-              : "Sin alertas"
-          }
-          title={
-            alertCount > 0
-              ? `${alertCount} cliente(s) con alertas operativas`
-              : "Sin alertas operativas"
-          }
-          className="relative flex size-[34px] cursor-pointer items-center justify-center rounded-[10px] transition-all hover:border-[rgba(241,233,224,0.2)]"
-          style={{ border: "1px solid rgba(241,233,224,0.08)" }}
-        >
-          <Bell className="size-4" style={{ color: "#A39A91" }} />
-          {alertCount > 0 && (
-            <span
-              className="absolute -right-[5px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-bold text-white"
-              style={{ background: "linear-gradient(90deg, #F52A6C, #FF6A35)", border: "2px solid #0A0808" }}
+        {/* Notification bell — panel con alertas operativas y cobros vencidos */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                aria-label={
+                  alertCount > 0 ? `${alertCount} notificaciones` : "Sin notificaciones"
+                }
+                className="relative flex size-[34px] cursor-pointer items-center justify-center rounded-[10px] outline-none transition-all hover:border-[rgba(241,233,224,0.2)] focus-visible:ring-2 focus-visible:ring-ring"
+                style={{ border: "1px solid rgba(241,233,224,0.08)" }}
+              />
+            }
+          >
+            <Bell className="size-4" style={{ color: "#A39A91" }} />
+            {alertCount > 0 && (
+              <span
+                className="absolute -right-[5px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-bold text-white"
+                style={{ background: "linear-gradient(90deg, #F52A6C, #FF6A35)", border: "2px solid #0A0808" }}
+              >
+                {alertCount > 9 ? "9+" : alertCount}
+              </span>
+            )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 p-0">
+            <div className="flex items-center justify-between px-3 py-2.5">
+              <span className="text-[13px] font-semibold">Notificaciones</span>
+              {alertCount > 0 && (
+                <span className="text-[11px] text-muted-foreground">{alertCount}</span>
+              )}
+            </div>
+            <DropdownMenuSeparator className="my-0" />
+            {notifs.length === 0 ? (
+              <div className="px-3 py-8 text-center text-[12px] text-muted-foreground">
+                Todo en orden — sin alertas operativas.
+              </div>
+            ) : (
+              <div className="max-h-[360px] overflow-y-auto py-1">
+                {notifs.slice(0, 12).map((n) => (
+                  <button
+                    key={n.id}
+                    onClick={() => router.push(n.href)}
+                    className="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[rgba(241,233,224,0.04)]"
+                  >
+                    <span
+                      className="mt-[5px] size-1.5 shrink-0 rounded-full"
+                      style={{ background: n.danger ? "#FF5C5C" : "#FFC247" }}
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[12.5px] font-medium text-[#F1E9E0]">
+                        {n.brand}
+                      </span>
+                      <span className="block truncate text-[11.5px] text-muted-foreground">
+                        {n.detail}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+                {notifs.length > 12 && (
+                  <p className="px-3 pb-1 pt-2 text-center text-[11px] text-muted-foreground">
+                    +{notifs.length - 12} más
+                  </p>
+                )}
+              </div>
+            )}
+            <DropdownMenuSeparator className="my-0" />
+            <DropdownMenuItem
+              onClick={() => router.push("/clients/dashboard")}
+              className="justify-center text-[12px] font-medium text-flare-soft"
             >
-              {alertCount > 9 ? "9+" : alertCount}
-            </span>
-          )}
-        </button>
+              Ver dashboard de clientes
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <span className="h-[22px] w-px" style={{ background: "rgba(241,233,224,0.08)" }} />
 

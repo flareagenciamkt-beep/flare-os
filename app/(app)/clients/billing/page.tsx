@@ -66,11 +66,8 @@ export default function ClientsBillingPage() {
       feeByCurrency.set(c.currency, (feeByCurrency.get(c.currency) ?? 0) + c.monthlyFee);
     }
   }
-  const feeText = feeByCurrency.size
-    ? [...feeByCurrency.entries()]
-        .map(([currency, total]) => `${fmt.format(total)} ${currency}`)
-        .join(" · ")
-    : "—";
+  // Ingreso desglosado por divisa, la de mayor monto primero.
+  const feeEntries = [...feeByCurrency.entries()].sort((a, z) => z[1] - a[1]);
 
   const lastByClient = new Map<string, ClientBilling>();
   for (const b of [...billing].sort((a, z) =>
@@ -104,7 +101,53 @@ export default function ClientsBillingPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Ingreso mensual acordado" value={feeText} icon={Wallet} tone="flare" />
+        <div
+          className="animate-fade-up relative overflow-hidden rounded-[18px] px-[22px] pb-[18px] pt-5 transition-all hover:-translate-y-[3px] hover:shadow-[0_18px_44px_rgba(0,0,0,0.45)]"
+          style={{
+            background: "linear-gradient(165deg, #14110F, #0E0C0B)",
+            border: "1px solid rgba(241,233,224,0.08)",
+          }}
+        >
+          <div
+            className="absolute left-[22px] right-[22px] top-0 h-[2px]"
+            style={{ background: "linear-gradient(90deg, #F52A6C, #FF6A35)" }}
+          />
+          <div className="flex items-center justify-between gap-2.5">
+            <span className="text-[12px] font-medium" style={{ color: "#a39990" }}>
+              Ingreso mensual acordado
+            </span>
+            <Wallet className="size-4" style={{ color: "#6e665f" }} />
+          </div>
+          {feeEntries.length ? (
+            <div className="mt-3.5 space-y-0.5">
+              {feeEntries.map(([currency, total], i) => (
+                <div key={currency} className="flex items-baseline gap-1.5">
+                  <span
+                    className={cn(
+                      "font-semibold leading-[1.05] tabular-nums",
+                      i === 0
+                        ? "flare-gradient-text text-[34px]"
+                        : "text-[20px] text-foreground/60",
+                    )}
+                    style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.5px" }}
+                  >
+                    {fmt.format(total)}
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: "#a39990" }}>
+                    {currency}/mes
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p
+              className="mt-3.5 text-[40px] font-semibold leading-[0.95] text-[#F1E9E0]"
+              style={{ fontFamily: "var(--font-display), sans-serif" }}
+            >
+              —
+            </p>
+          )}
+        </div>
         <StatCard
           label="Cobros vencidos"
           value={overdue.length}

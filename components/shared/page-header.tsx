@@ -15,7 +15,7 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
           {title}
         </h1>
         {description && (
-          <p className="max-w-2xl text-[13px] leading-relaxed" style={{ color: "#8a827a" }}>
+          <p className="max-w-2xl text-[13px] leading-relaxed" style={{ color: "#a39990" }}>
             {description}
           </p>
         )}

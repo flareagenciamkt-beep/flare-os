@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { CHART_COLORS, StackedBarChart } from "@/components/shared/charts";
 import { useFlare } from "@/lib/store";
 import {
   averageProgress,
@@ -54,6 +55,29 @@ export default function AgencyMetricsPage() {
   const byResponsible = Object.entries(countBy(activeIdeas, (i) => i.responsible)).sort(
     (a, b) => b[1] - a[1],
   );
+
+  // Mix de producción por cliente (barras apiladas).
+  const mixSeries = [
+    { label: "Ideas activas", color: CHART_COLORS.magenta },
+    { label: "Programados", color: CHART_COLORS.amber },
+    { label: "Publicados", color: CHART_COLORS.green },
+  ];
+  const productionMix = activeClients
+    .map((c) => {
+      const s = summarizeClient(c.id, ideas, tasks);
+      return { label: c.brand, values: [s.activeIdeas, s.scheduled, s.published] };
+    })
+    .filter((d) => d.values.some((v) => v > 0));
+
+  // Embudo del pipeline editorial (barras horizontales).
+  const pipeline = [
+    { label: "Ideas activas", value: activeIdeas.length, color: CHART_COLORS.magenta },
+    { label: "En producción", value: inProduction.length, color: CHART_COLORS.coral },
+    { label: "En revisión", value: inReview.length, color: CHART_COLORS.orange },
+    { label: "Programados", value: scheduled.length, color: CHART_COLORS.amber },
+    { label: "Publicados (mes)", value: published.length, color: CHART_COLORS.green },
+  ];
+  const pipeMax = Math.max(...pipeline.map((p) => p.value), 1);
 
   return (
     <div>
@@ -102,6 +126,46 @@ export default function AgencyMetricsPage() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
+        <Card className="gap-0 py-0">
+          <CardContent className="p-4">
+            <p className="mb-3 text-sm font-semibold">Mix de producción por cliente</p>
+            {productionMix.length ? (
+              <StackedBarChart data={productionMix} series={mixSeries} />
+            ) : (
+              <p className="py-8 text-center text-xs text-muted-foreground">
+                Sin producción registrada todavía.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="gap-0 py-0 self-start">
+          <CardContent className="p-4">
+            <p className="mb-3 text-sm font-semibold">Pipeline editorial</p>
+            <div className="space-y-3">
+              {pipeline.map((p) => (
+                <div key={p.label}>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">{p.label}</span>
+                    <span className="tabular-nums text-muted-foreground">{p.value}</span>
+                  </div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.round((p.value / pipeMax) * 100)}%`,
+                        backgroundColor: p.color,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="gap-0 py-0">
           <CardContent className="p-4">
             <p className="mb-3 text-sm font-semibold">Producción por cliente</p>

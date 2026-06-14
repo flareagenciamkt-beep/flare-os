@@ -36,7 +36,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "default" }: S
     >
       <div className="absolute left-[22px] right-[22px] top-0 h-[2px]" style={{ background: ACCENT_BARS[tone] }} />
       <div className="flex items-center justify-between gap-2.5">
-        <span className="text-[12px] font-medium" style={{ color: "#8a827a" }}>
+        <span className="text-[12px] font-medium" style={{ color: "#a39990" }}>
           {label}
         </span>
         {Icon && <Icon className="size-4" style={{ color: "#6e665f" }} />}

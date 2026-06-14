@@ -198,6 +198,7 @@ export function Sidebar({
           alt="flare"
           width={84}
           height={56}
+          priority
           style={{ filter: "drop-shadow(0 2px 12px rgba(245,42,108,0.3))", objectFit: "contain" }}
         />
         <span className="whitespace-pre rounded-[6px] font-mono text-[8px] leading-[1.3] tracking-[1.6px]" style={{ color: "#6e665f", border: "1px solid rgba(241,233,224,0.1)", padding: "3px 6px" }}>
