@@ -17,6 +17,7 @@ import {
   MOCK_BILLING,
   MOCK_CLIENT_NOTES,
   MOCK_CLIENTS,
+  MOCK_COMMENTS,
   MOCK_IDEAS,
   MOCK_MEETINGS,
   MOCK_METRICS,
@@ -34,7 +35,9 @@ import type {
   ClientMetric,
   ClientNote,
   ClientStrategy,
+  CommentAuthorRole,
   Idea,
+  IdeaComment,
   IdeaStatus,
   Process,
   Prompt,
@@ -71,6 +74,18 @@ interface FlareStore {
   updateIdea: (id: string, data: Partial<Idea>) => void;
   deleteIdea: (id: string) => void;
   moveIdea: (id: string, status: IdeaStatus) => void;
+  // Aprobación interna del equipo: registra quién y cuándo.
+  approveIdea: (id: string, by: string) => void;
+
+  // Comentarios por pieza (hilo equipo ↔ cliente)
+  comments: IdeaComment[];
+  addComment: (
+    ideaId: string,
+    body: string,
+    author: string,
+    authorRole: CommentAuthorRole,
+  ) => void;
+  deleteComment: (id: string) => void;
 
   addTask: (data: Omit<Task, keyof WithMeta>) => Task;
   updateTask: (id: string, data: Partial<Task>) => void;
@@ -213,6 +228,9 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   const [billing, setBilling] = React.useState<ClientBilling[]>(
     configured ? [] : MOCK_BILLING,
   );
+  const [comments, setComments] = React.useState<IdeaComment[]>(
+    configured ? [] : MOCK_COMMENTS,
+  );
   const [status, setStatus] = React.useState<LoadStatus>(
     configured ? "loading" : "ready",
   );
@@ -222,7 +240,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   // reintentos lo fijan antes de llamar (evita setState síncrono en efectos).
   const fetchAll = React.useCallback(async () => {
     const sb = getSupabase();
-    const [c, i, t, r, p, pr, m, st, cn, ac, mt, bi] = await Promise.all([
+    const [c, i, t, r, p, pr, m, st, cn, ac, mt, bi, cm] = await Promise.all([
       sb.from("clients").select("*").order("created_at"),
       sb.from("ideas").select("*").order("created_at", { ascending: false }),
       sb.from("tasks").select("*").order("created_at", { ascending: false }),
@@ -235,8 +253,9 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       sb.from("client_access").select("*").order("created_at", { ascending: false }),
       sb.from("client_meetings").select("*").order("meeting_date", { ascending: false }),
       sb.from("client_billing").select("*").order("created_at", { ascending: false }),
+      sb.from("idea_comments").select("*").order("created_at", { ascending: true }),
     ]);
-    const failed = [c, i, t, r, p, pr, m, st, cn, ac, mt, bi].find((res) => res.error);
+    const failed = [c, i, t, r, p, pr, m, st, cn, ac, mt, bi, cm].find((res) => res.error);
     if (failed?.error) {
       if (failed.error.code === "PGRST205") {
         setStatus("missing-schema");
@@ -258,6 +277,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     setAccesses((ac.data ?? []).map((row) => fromRow<ClientAccess>(row)));
     setMeetings((mt.data ?? []).map((row) => fromRow<ClientMeeting>(row)));
     setBilling((bi.data ?? []).map((row) => fromRow<ClientBilling>(row)));
+    setComments((cm.data ?? []).map((row) => fromRow<IdeaComment>(row)));
     setStatus("ready");
   }, []);
 
@@ -327,6 +347,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     const accessCrud = makeCrud<ClientAccess>("client_access", setAccesses);
     const meetingCrud = makeCrud<ClientMeeting>("client_meetings", setMeetings);
     const billingCrud = makeCrud<ClientBilling>("client_billing", setBilling);
+    const commentCrud = makeCrud<IdeaComment>("idea_comments", setComments);
 
     return {
       clients,
@@ -358,6 +379,20 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
             ? { status, clientApproval: "pendiente", clientApprovalAt: null }
             : { status }) as Partial<Idea>,
         ),
+      approveIdea: (id, by) =>
+        ideaCrud.update(id, {
+          status: "aprobada",
+          approvedBy: by,
+          approvedAt: new Date().toISOString(),
+        } as Partial<Idea>),
+
+      comments,
+      addComment: (ideaId, body, author, authorRole) =>
+        commentCrud.add({ ideaId, body, author, authorRole } as Omit<
+          IdeaComment,
+          keyof WithMeta
+        >),
+      deleteComment: commentCrud.remove,
 
       addTask: taskCrud.add,
       updateTask: taskCrud.update,
@@ -428,6 +463,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     accesses,
     meetings,
     billing,
+    comments,
   ]);
 
   const retry = () => {

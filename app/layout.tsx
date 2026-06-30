@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Sans, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Sans-serif premium y minimalista para títulos.
 const display = Instrument_Sans({
@@ -42,7 +43,7 @@ export default function RootLayout({
       }}
     >
       <body className="h-full">
-        {children}
+        <TooltipProvider delay={150}>{children}</TooltipProvider>
         <Toaster position="bottom-right" />
       </body>
     </html>

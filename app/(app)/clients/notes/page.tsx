@@ -27,6 +27,7 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SimpleSelect } from "@/components/shared/simple-select";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { TYPE_STYLES } from "@/components/clients/notes-tab";
 import { NoteFormDialog } from "@/components/forms/note-form";
 import { useFlare } from "@/lib/store";
@@ -40,6 +41,7 @@ import {
 
 export default function ClientNotesPage() {
   const { clients, clientNotes, deleteClientNote } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const [clientFilter, setClientFilter] = React.useState("all");
   const [typeFilter, setTypeFilter] = React.useState("all");
   const [formOpen, setFormOpen] = React.useState(false);
@@ -152,7 +154,7 @@ export default function ClientNotesPage() {
                     </span>
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        render={<Button variant="ghost" size="icon-xs" />}
+                        render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}
                       >
                         <MoreHorizontal />
                       </DropdownMenuTrigger>
@@ -168,10 +170,18 @@ export default function ClientNotesPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            deleteClientNote(note.id);
-                            toast.success("Nota eliminada");
-                          }}
+                          onClick={() =>
+                            confirm({
+                              title: `¿Eliminar "${note.title}"?`,
+                              description: "Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              destructive: true,
+                              onConfirm: () => {
+                                deleteClientNote(note.id);
+                                toast.success("Nota eliminada");
+                              },
+                            })
+                          }
                         >
                           <Trash2 /> Eliminar
                         </DropdownMenuItem>
@@ -213,6 +223,7 @@ export default function ClientNotesPage() {
           note={editing}
         />
       )}
+      {dialog}
     </div>
   );
 }

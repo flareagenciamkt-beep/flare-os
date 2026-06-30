@@ -17,6 +17,7 @@ import {
   IdeaStatusBadge,
   PriorityBadge,
 } from "@/components/shared/badges";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
 import { ideaDate } from "@/lib/stats";
@@ -25,14 +26,17 @@ import type { Idea } from "@/lib/types";
 interface IdeaCardProps {
   idea: Idea;
   onEdit: (idea: Idea) => void;
+  onPreview?: (idea: Idea) => void;
   showClient?: boolean;
 }
 
-export function IdeaCard({ idea, onEdit, showClient = true }: IdeaCardProps) {
+export function IdeaCard({ idea, onEdit, onPreview, showClient = true }: IdeaCardProps) {
   const { clientName, deleteIdea } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const date = ideaDate(idea);
 
   return (
+    <>
     <Card className="gap-0 py-0 transition-colors hover:border-foreground/15">
       <CardContent className="flex h-full flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
@@ -42,11 +46,21 @@ export function IdeaCard({ idea, onEdit, showClient = true }: IdeaCardProps) {
                 {clientName(idea.clientId)}
               </p>
             )}
-            <h3 className="mt-0.5 truncate text-sm font-semibold">{idea.title}</h3>
+            {onPreview ? (
+              <button
+                type="button"
+                onClick={() => onPreview(idea)}
+                className="mt-0.5 block w-full truncate text-left text-sm font-semibold underline-offset-2 transition-colors hover:text-flare-soft hover:underline focus-visible:text-flare-soft focus-visible:outline-none"
+              >
+                {idea.title}
+              </button>
+            ) : (
+              <h3 className="mt-0.5 truncate text-sm font-semibold">{idea.title}</h3>
+            )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-xs" className="shrink-0" />}
+              render={<Button variant="ghost" size="icon-xs" className="shrink-0" aria-label="Más opciones" />}
             >
               <MoreHorizontal />
             </DropdownMenuTrigger>
@@ -57,10 +71,18 @@ export function IdeaCard({ idea, onEdit, showClient = true }: IdeaCardProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => {
-                  deleteIdea(idea.id);
-                  toast.success("Idea eliminada");
-                }}
+                onClick={() =>
+                  confirm({
+                    title: `¿Eliminar "${idea.title}"?`,
+                    description: "Esta acción no se puede deshacer.",
+                    confirmLabel: "Eliminar",
+                    destructive: true,
+                    onConfirm: () => {
+                      deleteIdea(idea.id);
+                      toast.success("Idea eliminada");
+                    },
+                  })
+                }
               >
                 <Trash2 /> Eliminar
               </DropdownMenuItem>
@@ -101,5 +123,7 @@ export function IdeaCard({ idea, onEdit, showClient = true }: IdeaCardProps) {
         </div>
       </CardContent>
     </Card>
+    {dialog}
+    </>
   );
 }

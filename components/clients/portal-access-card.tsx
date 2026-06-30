@@ -5,7 +5,7 @@
 // perfiles existentes por email (solo equipo, vía RLS).
 
 import * as React from "react";
-import { Copy, KeyRound, Link2, RefreshCw, Unlink, UserPlus } from "lucide-react";
+import { Copy, KeyRound, Link2, RefreshCw, ShieldCheck, Unlink, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,8 @@ import type { Profile } from "@/lib/types";
 // Sin ambigüos (0/O, 1/l/I) para dictarla por teléfono sin dolor.
 const PASSWORD_CHARS =
   "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!#$%&*";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function generatePassword(length = 14): string {
   const bytes = crypto.getRandomValues(new Uint8Array(length));
@@ -95,7 +97,12 @@ export function PortalAccessCard({ clientId }: { clientId: string }) {
       setNewName("");
       setNewEmail("");
       setNewPassword("");
-      toast.success(`Usuario creado con acceso al portal de esta marca`);
+      // Seguridad: la contraseña nunca se muestra en pantalla. Se copia al
+      // portapapeles para pegarla directo en el gestor de contraseñas.
+      await navigator.clipboard
+        .writeText(`Portal Flare\nEmail: ${targetEmail}\nContraseña: ${password}`)
+        .catch(() => undefined);
+      toast.success("Usuario creado. Credenciales copiadas al portapapeles.");
       void refresh();
     } finally {
       setCreating(false);
@@ -163,7 +170,7 @@ export function PortalAccessCard({ clientId }: { clientId: string }) {
     void refresh();
   };
 
-  const canCreate = newName.trim().length >= 2 && newEmail.includes("@");
+  const canCreate = newName.trim().length >= 2 && EMAIL_RE.test(newEmail.trim());
 
   return (
     <Card className="gap-0 py-0">
@@ -248,17 +255,24 @@ export function PortalAccessCard({ clientId }: { clientId: string }) {
 
         {createdCreds && (
           <div className="mt-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2.5">
-            <p className="text-[11px] font-medium text-emerald-400">
-              Usuario creado — comparte estas credenciales:
+            <p className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+              <ShieldCheck className="size-3.5" />
+              Usuario creado para {createdCreds.email}
             </p>
-            <p className="mt-1 font-mono text-[11px]">{createdCreds.email}</p>
-            <p className="font-mono text-[11px]">{createdCreds.password}</p>
+            <div className="mt-1.5 flex items-center gap-2 rounded border border-border bg-background/40 px-2 py-1">
+              <span className="font-mono text-[11px] tracking-widest text-muted-foreground">
+                ••••••••••••
+              </span>
+              <span className="text-[10px] text-muted-foreground">contraseña oculta</span>
+            </div>
             <div className="mt-1.5 flex items-center justify-between gap-2">
               <p className="text-[10px] leading-relaxed text-muted-foreground">
-                Guárdala en un gestor de contraseñas: no se mostrará de nuevo.
+                Ya está en tu portapapeles. Guárdala en un gestor de contraseñas:
+                no se mostrará en pantalla.
               </p>
-              <Button variant="outline" size="icon-xs" aria-label="Copiar credenciales" onClick={copyCreds}>
-                <Copy />
+              <Button variant="outline" size="sm" aria-label="Copiar credenciales de nuevo" onClick={copyCreds}>
+                <Copy data-icon="inline-start" />
+                Copiar
               </Button>
             </div>
           </div>

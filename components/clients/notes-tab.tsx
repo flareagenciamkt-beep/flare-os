@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SimpleSelect } from "@/components/shared/simple-select";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { NoteFormDialog } from "@/components/forms/note-form";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
@@ -45,6 +46,7 @@ function NoteCard({
   onEdit: (n: ClientNote) => void;
 }) {
   const { deleteClientNote, updateClientNote, ideas, tasks, meetings } = useFlare();
+  const { confirm, dialog } = useConfirm();
 
   const relatedLabel = React.useMemo(() => {
     if (!note.relatedEntityType || !note.relatedEntityId) return null;
@@ -60,6 +62,7 @@ function NoteCard({
   }, [note.relatedEntityType, note.relatedEntityId, ideas, tasks, meetings]);
 
   return (
+    <>
     <Card className={cn("gap-0 py-0", note.isPinned && "border-flare/30")}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2">
@@ -77,7 +80,7 @@ function NoteCard({
               {NOTE_TYPE_LABELS[note.type]}
             </span>
             <DropdownMenu>
-              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}>
                 <MoreHorizontal />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
@@ -92,10 +95,18 @@ function NoteCard({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={() => {
-                    deleteClientNote(note.id);
-                    toast.success("Nota eliminada");
-                  }}
+                  onClick={() =>
+                    confirm({
+                      title: `¿Eliminar "${note.title}"?`,
+                      description: "Esta acción no se puede deshacer.",
+                      confirmLabel: "Eliminar",
+                      destructive: true,
+                      onConfirm: () => {
+                        deleteClientNote(note.id);
+                        toast.success("Nota eliminada");
+                      },
+                    })
+                  }
                 >
                   <Trash2 /> Eliminar
                 </DropdownMenuItem>
@@ -120,6 +131,8 @@ function NoteCard({
         </div>
       </CardContent>
     </Card>
+    {dialog}
+    </>
   );
 }
 

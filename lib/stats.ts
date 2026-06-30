@@ -15,11 +15,10 @@ import {
   type Task,
 } from "./types";
 
-// Estados de idea que cuentan como "activas" en dashboards.
-// "pausada" y "archivada" NO son activas.
+// Estados de idea que cuentan como "activas" en dashboards: todo el flujo
+// excepto "publicada" (ya cerrada).
 export const ACTIVE_IDEA_STATUSES = [
   "idea",
-  "validada",
   "en_produccion",
   "en_revision_interna",
   "en_revision_cliente",
@@ -62,7 +61,7 @@ export function isIdeaOverdue(idea: Idea, now = new Date()): boolean {
 }
 
 export function isClientAtRisk(client: Client) {
-  return client.healthStatus === "atrasado" || client.healthStatus === "critico";
+  return client.healthStatus === "riesgo" || client.healthStatus === "critico";
 }
 
 export interface ClientSummary {
@@ -99,8 +98,8 @@ export function clientAlerts(
   now = new Date(),
 ): string[] {
   const alerts: string[] = [];
-  if (client.healthStatus === "critico" || client.healthStatus === "atrasado") {
-    alerts.push(`Health ${HEALTH_LABELS[client.healthStatus].toLowerCase()}`);
+  if (client.healthStatus === "critico" || client.healthStatus === "riesgo") {
+    alerts.push(`Estado ${HEALTH_LABELS[client.healthStatus].toLowerCase()}`);
   }
   if (!client.nextAction.trim()) {
     alerts.push("Sin próxima acción definida");
@@ -155,6 +154,25 @@ export function clientAlerts(
     alerts.push(`${pendingAccess} acceso${pendingAccess > 1 ? "s" : ""} pendiente${pendingAccess > 1 ? "s" : ""}`);
   }
   return alerts;
+}
+
+// Severidad de una alerta operativa (string de clientAlerts) para comunicarla
+// con color + icono + texto, no solo color.
+export type AlertSeverity = "info" | "warning" | "critical";
+
+export function alertSeverity(message: string): AlertSeverity {
+  const m = message.toLowerCase();
+  if (m.includes("crítico") || m.includes("critico")) return "critical";
+  if (m.includes("atrasad") || m.includes("vencid")) return "critical";
+  if (
+    m.includes("sin fecha") ||
+    m.includes("+5 días") ||
+    m.includes("sin actualización") ||
+    m.includes("sin registrar") ||
+    m.includes("pendiente")
+  )
+    return "warning";
+  return "info";
 }
 
 // Progreso operativo semiautomático (Vista 360).
@@ -217,12 +235,41 @@ export function clientOperationalProgress(
   return { production, tasks: tasksPct, calendar, overall };
 }
 
+// Progreso del portal del cliente derivado de datos reales (no del % manual).
+// Mide qué proporción de las piezas relevantes ya avanzó a aprobada/programada/
+// publicada. Sin piezas → 0 (evita mostrar progreso falso como 90%).
+export function portalProgress(ideas: Idea[]): number {
+  const relevant = ideas.filter(
+    (i) => isIdeaActive(i) || i.status === "publicada",
+  );
+  if (!relevant.length) return 0;
+  const advanced = relevant.filter((i) =>
+    ["aprobada", "programada", "publicada"].includes(i.status),
+  ).length;
+  return Math.round((advanced / relevant.length) * 100);
+}
+
 export function averageProgress(clients: Client[]) {
   const active = clients.filter((c) => c.status === "activo");
   if (!active.length) return 0;
   return Math.round(
     active.reduce((sum, c) => sum + c.progressPercentage, 0) / active.length,
   );
+}
+
+// Distribución de piezas por día de la semana (lun→dom) según su fecha.
+// Para los gráficos de barras semanales de los dashboards.
+export function ideasPerWeekday(ideas: Idea[], now = new Date()): number[] {
+  const counts = [0, 0, 0, 0, 0, 0, 0]; // índice 0 = lunes
+  for (const idea of ideas) {
+    const date = ideaDate(idea);
+    if (!date) continue;
+    const d = parseISO(date);
+    if (Math.abs(differenceInCalendarDays(d, now)) > 31) continue; // ventana ~1 mes
+    const weekday = (d.getDay() + 6) % 7; // getDay: 0=dom → 6; 1=lun → 0
+    counts[weekday] += 1;
+  }
+  return counts;
 }
 
 export function countBy<T>(items: T[], key: (item: T) => string) {

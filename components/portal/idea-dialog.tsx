@@ -3,7 +3,7 @@
 // Vista read-only de una pieza para el cliente + acciones de aprobación.
 
 import * as React from "react";
-import { CalendarDays, Check, MessageSquare, ThumbsUp } from "lucide-react";
+import { CalendarDays, Check, Clock, MessageSquare, ThumbsUp } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,8 @@ import {
   FormatBadge,
   IdeaStatusBadge,
 } from "@/components/shared/badges";
-import { PieceImage } from "@/components/shared/piece-image";
+import { PieceCarousel } from "@/components/shared/piece-carousel";
+import { CommentsThread } from "@/components/shared/comments-thread";
 import { usePortal } from "@/lib/portal-store";
 import { formatDate } from "@/lib/dates";
 import { ideaDate } from "@/lib/stats";
@@ -35,7 +36,23 @@ function ApprovalActions({ idea, onDone }: { idea: Idea; onDone: () => void }) {
   // aprobar (la pieza pasa a estado "aprobada" y mostramos la confirmación).
   const inClientReview = idea.status === "en_revision_cliente";
   const justApproved = idea.status === "aprobada" && approval === "aprobada";
-  if (!inClientReview && !justApproved) return null;
+  if (!inClientReview && !justApproved) {
+    // No está en tu revisión: explicamos por qué no hay botones (en vez de nada).
+    const message =
+      idea.status === "publicada"
+        ? "Esta pieza ya fue publicada. 🎉"
+        : idea.status === "programada"
+          ? "Esta pieza ya está aprobada y programada para publicarse."
+          : "El equipo de Flare todavía está preparando esta pieza. Podrás aprobarla cuando pase a tu revisión.";
+    return (
+      <div className="rounded-md border border-border bg-secondary/30 px-3 py-2.5 text-xs text-muted-foreground">
+        <p className="flex items-center gap-1.5">
+          <Clock className="size-3.5 shrink-0 text-flare-soft" />
+          {message}
+        </p>
+      </div>
+    );
+  }
 
   if (approval !== "pendiente") {
     return (
@@ -123,6 +140,9 @@ interface PortalIdeaDialogProps {
 }
 
 export function PortalIdeaDialog({ idea, open, onOpenChange }: PortalIdeaDialogProps) {
+  const { comments, addComment } = usePortal();
+  const ideaComments = idea ? comments.filter((c) => c.ideaId === idea.id) : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -135,11 +155,7 @@ export function PortalIdeaDialog({ idea, open, onOpenChange }: PortalIdeaDialogP
               )}
             </DialogHeader>
 
-            {idea.coverImage && (
-              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-zinc-900">
-                <PieceImage src={idea.coverImage} alt={idea.title} />
-              </div>
-            )}
+            <PieceCarousel idea={idea} />
 
             <div className="flex flex-wrap items-center gap-1.5">
               <IdeaStatusBadge status={idea.status} />
@@ -151,7 +167,32 @@ export function PortalIdeaDialog({ idea, open, onOpenChange }: PortalIdeaDialogP
               </span>
             </div>
 
+            {idea.copy && (
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Copy
+                </p>
+                <p className="whitespace-pre-wrap rounded-md border border-border bg-secondary/30 p-2.5 text-xs leading-relaxed">
+                  {idea.copy}
+                </p>
+              </div>
+            )}
+
             <ApprovalActions idea={idea} onDone={() => onOpenChange(false)} />
+
+            {idea.approvedBy && (
+              <p className="text-[11px] text-emerald-400">
+                Aprobada por {idea.approvedBy}
+                {idea.approvedAt && ` · ${formatDate(idea.approvedAt, "d MMM yyyy")}`}
+              </p>
+            )}
+
+            <div className="max-h-[35vh] overflow-y-auto border-t border-border pt-3">
+              <CommentsThread
+                comments={ideaComments}
+                onAdd={(text) => void addComment(idea.id, text)}
+              />
+            </div>
           </>
         )}
       </DialogContent>

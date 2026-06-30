@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { AccessFormDialog } from "@/components/forms/access-form";
 import { useFlare } from "@/lib/store";
 import {
@@ -49,6 +50,7 @@ const STATUS_STYLES: Record<AccessStatus, string> = {
 
 export function AccessTab({ clientId }: { clientId: string }) {
   const { accesses, deleteAccess } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ClientAccess | null>(null);
 
@@ -128,7 +130,7 @@ export function AccessTab({ clientId }: { clientId: string }) {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}>
                         <MoreHorizontal />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
@@ -138,10 +140,18 @@ export function AccessTab({ clientId }: { clientId: string }) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            deleteAccess(a.id);
-                            toast.success("Acceso eliminado");
-                          }}
+                          onClick={() =>
+                            confirm({
+                              title: `¿Eliminar el acceso a ${a.platform}?`,
+                              description: "Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              destructive: true,
+                              onConfirm: () => {
+                                deleteAccess(a.id);
+                                toast.success("Acceso eliminado");
+                              },
+                            })
+                          }
                         >
                           <Trash2 /> Eliminar
                         </DropdownMenuItem>
@@ -173,6 +183,7 @@ export function AccessTab({ clientId }: { clientId: string }) {
         clientId={clientId}
         access={editing}
       />
+      {dialog}
     </div>
   );
 }

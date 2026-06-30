@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { BillingFormDialog } from "@/components/forms/billing-form";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
@@ -50,6 +51,7 @@ const fmt = new Intl.NumberFormat("es-CO");
 
 export function BillingTab({ client }: { client: Client }) {
   const { billing, deleteBilling } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ClientBilling | null>(null);
 
@@ -120,7 +122,7 @@ export function BillingTab({ client }: { client: Client }) {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}>
                         <MoreHorizontal />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
@@ -130,10 +132,18 @@ export function BillingTab({ client }: { client: Client }) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            deleteBilling(b.id);
-                            toast.success("Registro eliminado");
-                          }}
+                          onClick={() =>
+                            confirm({
+                              title: "¿Eliminar este registro de cobro?",
+                              description: "Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              destructive: true,
+                              onConfirm: () => {
+                                deleteBilling(b.id);
+                                toast.success("Registro eliminado");
+                              },
+                            })
+                          }
                         >
                           <Trash2 /> Eliminar
                         </DropdownMenuItem>
@@ -165,6 +175,7 @@ export function BillingTab({ client }: { client: Client }) {
         client={client}
         record={editing}
       />
+      {dialog}
     </div>
   );
 }

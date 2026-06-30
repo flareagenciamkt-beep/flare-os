@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import {
   MetricsCards,
   MetricsCharts,
+  MetricsInsights,
   MetricsTable,
 } from "@/components/metrics/metrics-panel";
 import { usePortal } from "@/lib/portal-store";
@@ -30,6 +31,7 @@ export default function PortalMetricsPage() {
       ) : (
         <div className="space-y-4">
           <MetricsCards metrics={metrics} />
+          <MetricsInsights metrics={metrics} />
           <MetricsCharts metrics={metrics} />
           <div>
             <p className="mb-2 text-sm font-semibold">Detalle mes a mes</p>

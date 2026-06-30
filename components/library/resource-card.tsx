@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TagBadge } from "@/components/shared/badges";
 import { PieceImage } from "@/components/shared/piece-image";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { useFlare } from "@/lib/store";
 import {
   RESOURCE_CATEGORY_LABELS,
@@ -32,8 +33,10 @@ interface ResourceCardProps {
 
 export function ResourceCard({ resource, onEdit, showClient = true }: ResourceCardProps) {
   const { clientName, deleteResource } = useFlare();
+  const { confirm, dialog } = useConfirm();
 
   return (
+    <>
     <Card className="gap-0 py-0 transition-colors hover:border-foreground/15">
       <CardContent className="flex h-full flex-col gap-2.5 p-4">
         <div className="flex items-start justify-between gap-2">
@@ -47,7 +50,7 @@ export function ResourceCard({ resource, onEdit, showClient = true }: ResourceCa
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-xs" className="shrink-0" />}
+              render={<Button variant="ghost" size="icon-xs" className="shrink-0" aria-label="Más opciones" />}
             >
               <MoreHorizontal />
             </DropdownMenuTrigger>
@@ -58,10 +61,18 @@ export function ResourceCard({ resource, onEdit, showClient = true }: ResourceCa
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => {
-                  deleteResource(resource.id);
-                  toast.success("Recurso eliminado");
-                }}
+                onClick={() =>
+                  confirm({
+                    title: `¿Eliminar "${resource.title}"?`,
+                    description: "Esta acción no se puede deshacer.",
+                    confirmLabel: "Eliminar",
+                    destructive: true,
+                    onConfirm: () => {
+                      deleteResource(resource.id);
+                      toast.success("Recurso eliminado");
+                    },
+                  })
+                }
               >
                 <Trash2 /> Eliminar
               </DropdownMenuItem>
@@ -120,5 +131,7 @@ export function ResourceCard({ resource, onEdit, showClient = true }: ResourceCa
         </div>
       </CardContent>
     </Card>
+    {dialog}
+    </>
   );
 }

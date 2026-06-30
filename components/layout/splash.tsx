@@ -1,10 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import { Loader2 } from "lucide-react";
 
 export function Splash({ label = "Cargando Flare OS..." }: { label?: string }) {
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-5 bg-background">
+    <div
+      className="flex h-screen flex-col items-center justify-center gap-5 bg-background"
+      role="status"
+      aria-live="polite"
+    >
       <div className="relative flex items-center justify-center">
         {/* Glow detrás del logo */}
         <div
@@ -25,7 +30,10 @@ export function Splash({ label = "Cargando Flare OS..." }: { label?: string }) {
           style={{ filter: "drop-shadow(0 6px 30px rgba(245,42,108,0.32))" }}
         />
       </div>
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin text-flare" />
+        <span>{label}</span>
+      </div>
     </div>
   );
 }

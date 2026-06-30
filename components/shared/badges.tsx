@@ -45,10 +45,12 @@ const DOT = <span className="size-1.5 rounded-full bg-current" />;
 
 export function ClientStatusBadge({ status }: { status: ClientStatus }) {
   const styles: Record<ClientStatus, string> = {
+    prospecto: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
+    onboarding: "border-[rgba(80,160,255,0.26)] bg-[rgba(80,160,255,0.08)] text-[#7FB4FF]",
     activo: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
     pausado: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
-    prospecto: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
     cerrado: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#6e665f]",
+    perdido: "border-[rgba(255,92,92,0.28)] bg-[rgba(255,92,92,0.08)] text-[#FF5C5C]",
   };
   return (
     <Pill className={styles[status]}>
@@ -61,9 +63,10 @@ export function ClientStatusBadge({ status }: { status: ClientStatus }) {
 export function HealthBadge({ health }: { health: HealthStatus }) {
   const styles: Record<HealthStatus, string> = {
     bien: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
-    atencion: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
-    atrasado: "border-[rgba(255,106,53,0.26)] bg-[rgba(255,106,53,0.08)] text-[#FF6A35]",
+    observacion: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
+    riesgo: "border-[rgba(255,106,53,0.26)] bg-[rgba(255,106,53,0.08)] text-[#FF6A35]",
     critico: "border-[rgba(255,92,92,0.28)] bg-[rgba(255,92,92,0.08)] text-[#FF5C5C]",
+    pausado: "border-[rgba(241,233,224,0.12)] bg-[rgba(241,233,224,0.04)] text-[#a39990]",
   };
   return (
     <Pill className={styles[health]}>
@@ -94,15 +97,12 @@ export function PhaseBadge({ phase }: { phase: ClientPhase }) {
 export function IdeaStatusBadge({ status }: { status: IdeaStatus }) {
   const styles: Record<IdeaStatus, string> = {
     idea: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#A39A91]",
-    validada: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
     en_produccion: "border-[rgba(245,42,108,0.3)] bg-[rgba(245,42,108,0.08)] text-[#ff7da4]",
     en_revision_interna: "border-[rgba(142,91,255,0.26)] bg-[rgba(142,91,255,0.08)] text-[#C798FF]",
     en_revision_cliente: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
     aprobada: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
     programada: "border-[rgba(255,106,53,0.26)] bg-[rgba(255,106,53,0.08)] text-[#FF6A35]",
     publicada: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
-    pausada: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
-    archivada: "border-[rgba(241,233,224,0.08)] bg-[rgba(241,233,224,0.02)] text-[#57504a]",
   };
   return (
     <Pill className={styles[status]}>

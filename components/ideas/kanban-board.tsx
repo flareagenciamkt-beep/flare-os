@@ -28,6 +28,7 @@ import {
   FormatBadge,
   PriorityBadge,
 } from "@/components/shared/badges";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
 import { ideaDate, isIdeaOverdue } from "@/lib/stats";
@@ -40,8 +41,7 @@ import {
   type IdeaStatus,
 } from "@/lib/types";
 
-// El menú "Mover a" ofrece TODOS los estados (incluye pausada/archivada,
-// que no son columnas del tablero).
+// El menú "Mover a" ofrece todos los estados del flujo (los 7).
 const ALL_STATUSES = optionsFromLabels(IDEA_STATUS_LABELS);
 
 interface KanbanBoardProps {
@@ -60,12 +60,14 @@ function KanbanCard({
   showClient: boolean;
 }) {
   const { clientName, deleteIdea, moveIdea } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const col = KANBAN_COLUMNS.indexOf(idea.status);
   const prev = col > 0 ? KANBAN_COLUMNS[col - 1] : null;
   const next = col < KANBAN_COLUMNS.length - 1 ? KANBAN_COLUMNS[col + 1] : null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-foreground/15">
+    <>
+    <div className="animate-fade-up rounded-lg border border-border bg-card p-3 transition-all hover:border-foreground/15 hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0">
           {showClient && (
@@ -77,7 +79,7 @@ function KanbanCard({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon-xs" className="shrink-0" />}
+            render={<Button variant="ghost" size="icon-xs" className="shrink-0" aria-label="Más opciones" />}
           >
             <MoreHorizontal />
           </DropdownMenuTrigger>
@@ -97,10 +99,18 @@ function KanbanCard({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => {
-                deleteIdea(idea.id);
-                toast.success("Idea eliminada");
-              }}
+              onClick={() =>
+                confirm({
+                  title: `¿Eliminar "${idea.title}"?`,
+                  description: "Esta acción no se puede deshacer.",
+                  confirmLabel: "Eliminar",
+                  destructive: true,
+                  onConfirm: () => {
+                    deleteIdea(idea.id);
+                    toast.success("Idea eliminada");
+                  },
+                })
+              }
             >
               <Trash2 /> Eliminar
             </DropdownMenuItem>
@@ -148,6 +158,8 @@ function KanbanCard({
         </Button>
       </div>
     </div>
+    {dialog}
+    </>
   );
 }
 
@@ -155,13 +167,13 @@ export function KanbanBoard({ ideas, onEdit, showClient = true }: KanbanBoardPro
   const byStatus = (status: IdeaStatus) => ideas.filter((i) => i.status === status);
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none [scrollbar-width:thin]">
       {KANBAN_COLUMNS.map((status) => {
         const items = byStatus(status);
         return (
           <div
             key={status}
-            className="flex w-64 shrink-0 flex-col rounded-lg bg-secondary/40 p-2"
+            className="flex w-[85vw] shrink-0 snap-start flex-col rounded-lg bg-secondary/40 p-2 sm:w-64"
           >
             <div className="flex items-center justify-between px-1.5 py-1.5">
               <p className="text-xs font-semibold text-foreground/80">

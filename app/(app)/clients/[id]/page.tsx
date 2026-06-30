@@ -5,7 +5,6 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowLeft,
   Building2,
   CalendarClock,
@@ -28,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { AlertChip } from "@/components/shared/alert-chip";
 import {
   ClientStatusBadge,
   HealthBadge,
@@ -298,13 +298,7 @@ export default function ClientDetailPage({
           {alerts.length ? (
             <div className="flex flex-wrap gap-1.5">
               {alerts.map((alert) => (
-                <span
-                  key={alert}
-                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-400"
-                >
-                  <AlertTriangle className="size-3" />
-                  {alert}
-                </span>
+                <AlertChip key={alert} message={alert} />
               ))}
             </div>
           ) : (
@@ -319,10 +313,14 @@ export default function ClientDetailPage({
       <Tabs defaultValue="resumen">
         <TabsList
           variant="line"
-          className="w-full justify-start overflow-x-auto border-b border-border"
+          className="w-full flex-nowrap justify-start overflow-x-auto border-b border-border [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value}>
+            <TabsTrigger
+              key={t.value}
+              value={t.value}
+              className="min-h-11 shrink-0 grow-0 px-3 data-active:text-flare after:bg-[var(--flare)] sm:min-h-9"
+            >
               {t.label}
             </TabsTrigger>
           ))}

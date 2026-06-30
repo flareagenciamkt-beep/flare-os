@@ -29,6 +29,7 @@ import {
   PriorityBadge,
 } from "@/components/shared/badges";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { TaskFormDialog } from "@/components/forms/task-form";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
@@ -47,6 +48,7 @@ interface IdeasTableProps {
 
 export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps) {
   const { clientName, deleteIdea, moveIdea } = useFlare();
+  const { confirm, dialog } = useConfirm();
   // "Crear tarea desde contenido": el diálogo vive aquí para que funcione
   // en todas las vistas que usan esta tabla sin tocar cada página.
   const [taskFromIdea, setTaskFromIdea] = React.useState<Idea | null>(null);
@@ -122,7 +124,7 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={<Button variant="ghost" size="icon-xs" />}
+                    render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}
                   >
                     <MoreHorizontal />
                   </DropdownMenuTrigger>
@@ -148,10 +150,18 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"
-                      onClick={() => {
-                        deleteIdea(idea.id);
-                        toast.success("Idea eliminada");
-                      }}
+                      onClick={() =>
+                        confirm({
+                          title: `¿Eliminar "${idea.title}"?`,
+                          description: "Esta acción no se puede deshacer.",
+                          confirmLabel: "Eliminar",
+                          destructive: true,
+                          onConfirm: () => {
+                            deleteIdea(idea.id);
+                            toast.success("Idea eliminada");
+                          },
+                        })
+                      }
                     >
                       <Trash2 /> Eliminar
                     </DropdownMenuItem>
@@ -171,6 +181,7 @@ export function IdeasTable({ ideas, onEdit, showClient = true }: IdeasTableProps
         defaultClientId={taskFromIdea?.clientId ?? null}
         defaultIdeaId={taskFromIdea?.id}
       />
+      {dialog}
     </div>
   );
 }

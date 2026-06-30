@@ -1,55 +1,37 @@
 "use client";
 
-import Link from "next/link";
 import {
-  AlertTriangle,
   CalendarDays,
-  CheckSquare,
   Clapperboard,
   Eye,
   Lightbulb,
   Send,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { PageHeader } from "@/components/shared/page-header";
-import { StatCard } from "@/components/shared/stat-card";
-import { HealthBadge, IdeaStatusBadge } from "@/components/shared/badges";
+import { IdeaStatusBadge } from "@/components/shared/badges";
+import { PieceImage } from "@/components/shared/piece-image";
+import { WelcomeHeader } from "@/components/dashboard/welcome-header";
+import { SegmentedBar } from "@/components/dashboard/segmented-bar";
+import { BigCounter } from "@/components/dashboard/big-counter";
+import { BentoCard } from "@/components/dashboard/bento-card";
+import { WeekBars } from "@/components/dashboard/week-bars";
+import { RingStat } from "@/components/dashboard/ring-stat";
+import { TaskChecklist } from "@/components/dashboard/task-checklist";
+import { WeekTimeline } from "@/components/dashboard/week-timeline";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
 import {
   countBy,
   ideaDate,
-  isClientAtRisk,
+  ideasPerWeekday,
   isIdeaActive,
-  isTaskOpen,
-  isTaskOverdue,
   publishedThisMonth,
 } from "@/lib/stats";
+import { IDEA_STATUS_LABELS } from "@/lib/types";
 
-function BarList({ data, total }: { data: [string, number][]; total: number }) {
-  return (
-    <div className="space-y-2.5">
-      {data.map(([label, count]) => (
-        <div key={label}>
-          <div className="flex items-center justify-between text-xs">
-            <span className="truncate font-medium">{label}</span>
-            <span className="tabular-nums text-muted-foreground">{count}</span>
-          </div>
-          <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-flare"
-              style={{ width: `${total ? Math.round((count / total) * 100) : 0}%` }}
-            />
-          </div>
-        </div>
-      ))}
-      {!data.length && <p className="text-xs text-muted-foreground">Sin datos.</p>}
-    </div>
-  );
-}
+const WEEKDAY_LABELS = ["L", "M", "X", "J", "V", "S", "D"];
 
 export default function AgencyDashboardPage() {
-  const { ideas, tasks, clients, clientName } = useFlare();
+  const { ideas, clientName } = useFlare();
 
   const activeIdeas = ideas.filter(isIdeaActive);
   const inProduction = ideas.filter((i) => i.status === "en_produccion");
@@ -57,161 +39,181 @@ export default function AgencyDashboardPage() {
   const awaitingClient = ideas.filter((i) => i.status === "en_revision_cliente");
   const scheduled = ideas.filter((i) => i.status === "programada");
   const published = publishedThisMonth(ideas);
-  const openTasks = tasks.filter(isTaskOpen);
-  const overdueTasks = tasks.filter((t) => isTaskOverdue(t));
-  const clientsAtRisk = clients.filter(
-    (c) => c.status === "activo" && isClientAtRisk(c),
-  );
 
-  const byClient = Object.entries(
-    countBy(activeIdeas, (i) => clientName(i.clientId)),
-  ).sort((a, b) => b[1] - a[1]);
+  // Funnel de producción para la barra segmentada.
+  const funnelSegments = [
+    { label: "Activas", value: activeIdeas.length, tone: "fill" as const },
+    { label: "Producción", value: Math.max(inProduction.length, 0), tone: "dark" as const },
+    { label: "Revisión", value: Math.max(inReviewInternal.length + awaitingClient.length, 0), tone: "outline" as const },
+    { label: "Programadas", value: Math.max(scheduled.length, 0), tone: "ghost" as const },
+  ].filter((s) => s.value > 0);
+
+  // Producción completada (anillo).
+  const completion = activeIdeas.length + published.length
+    ? Math.round((published.length / (activeIdeas.length + published.length)) * 100)
+    : 0;
+
+  // Producción por responsable (mini barras del card destacado).
   const byResponsible = Object.entries(
     countBy(activeIdeas, (i) => i.responsible),
-  ).sort((a, b) => b[1] - a[1]);
+  ).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const maxResp = byResponsible[0]?.[1] ?? 1;
 
+  // Barras por día.
+  const weekData = ideasPerWeekday(ideas).map((value, i) => ({
+    label: WEEKDAY_LABELS[i],
+    value,
+  }));
+
+  // Próximos entregables (con fecha, no publicados).
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = ideas
     .map((i) => ({ idea: i, date: ideaDate(i) }))
     .filter(
       (x): x is { idea: (typeof ideas)[number]; date: string } =>
-        Boolean(x.date) &&
-        x.date! >= today &&
-        !["publicada", "pausada", "archivada"].includes(x.idea.status),
+        Boolean(x.date) && x.date! >= today && x.idea.status !== "publicada",
     )
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 6);
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Pieza destacada: el próximo entregable.
+  const featured = upcoming[0]?.idea;
+
+  // Checklist: piezas recientes con su estado (done = publicada).
+  const checklistItems = [...ideas]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 6)
+    .map((i) => ({
+      id: i.id,
+      icon: Lightbulb,
+      label: i.title,
+      meta: `${clientName(i.clientId)} · ${IDEA_STATUS_LABELS[i.status]}`,
+      done: i.status === "publicada",
+      href: "/agency/content?view=lista",
+    }));
+
+  // Eventos del calendario semanal.
+  const timelineEvents = ideas
+    .map((i) => ({ idea: i, date: ideaDate(i) }))
+    .filter((x): x is { idea: (typeof ideas)[number]; date: string } => Boolean(x.date))
+    .map((x) => ({
+      id: x.idea.id,
+      title: x.idea.title,
+      sub: clientName(x.idea.clientId),
+      date: x.date,
+      href: "/agency/content?view=calendario",
+    }));
 
   return (
     <div>
-      <PageHeader
-        title="Dashboard de agencia"
-        description="Pulso operativo de Flare: producción, entregables y alertas."
+      <WelcomeHeader
+        title={<>Vista agencia</>}
+        segmented={funnelSegments.length ? <SegmentedBar segments={funnelSegments} /> : undefined}
+        counters={
+          <>
+            <BigCounter icon={Lightbulb} value={activeIdeas.length} label="Ideas activas" />
+            <BigCounter icon={Clapperboard} value={inProduction.length} label="En producción" />
+            <BigCounter icon={Send} value={published.length} label="Publicadas este mes" />
+          </>
+        }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Ideas activas" value={activeIdeas.length} icon={Lightbulb} tone="flare" />
-        <StatCard label="En producción" value={inProduction.length} icon={Clapperboard} />
-        <StatCard label="Revisión interna" value={inReviewInternal.length} icon={Eye} />
-        <StatCard
-          label="Esperando cliente"
-          value={awaitingClient.length}
-          icon={Eye}
-          tone={awaitingClient.length ? "warning" : "default"}
-        />
-        <StatCard label="Programados" value={scheduled.length} icon={CalendarDays} />
-        <StatCard
-          label="Publicados este mes"
-          value={published.length}
-          icon={Send}
-          tone="success"
-        />
-        <StatCard label="Tareas pendientes" value={openTasks.length} icon={CheckSquare} />
-        <StatCard
-          label="Tareas atrasadas"
-          value={overdueTasks.length}
-          icon={AlertTriangle}
-          tone={overdueTasks.length ? "danger" : "success"}
-        />
-        <StatCard
-          label="Clientes en riesgo"
-          value={clientsAtRisk.length}
-          icon={AlertTriangle}
-          tone={clientsAtRisk.length ? "warning" : "success"}
-        />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Pieza destacada */}
+        {featured ? (
+          <BentoCard
+            className="sm:col-span-2 lg:col-span-1 lg:row-span-2"
+            contentClassName="gap-0"
+            title="Próximo entregable"
+            href="/agency/content?view=feed"
+          >
+            <div className="relative mt-1 aspect-[4/5] w-full overflow-hidden rounded-xl bg-zinc-900">
+              <div className="flex h-full flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                <Eye className="size-5" />
+                <span className="text-[11px]">Preview pendiente</span>
+              </div>
+              {featured.coverImage && <PieceImage src={featured.coverImage} alt={featured.title} />}
+            </div>
+            <p className="mt-3 truncate text-sm font-semibold">{featured.title}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {clientName(featured.clientId)} · {featured.responsible}
+            </p>
+            <div className="mt-2 flex items-center justify-between">
+              <IdeaStatusBadge status={featured.status} />
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {formatDate(ideaDate(featured), "d MMM")}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-2 border-t border-border pt-3">
+              <p className="text-[11px] font-medium text-muted-foreground">Producción por responsable</p>
+              {byResponsible.map(([name, count]) => (
+                <div key={name}>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="truncate">{name}</span>
+                    <span className="tabular-nums text-muted-foreground">{count}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="flare-gradient h-full rounded-full"
+                      style={{ width: `${Math.round((count / maxResp) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </BentoCard>
+        ) : (
+          <BentoCard className="sm:col-span-2 lg:col-span-1 lg:row-span-2" title="Próximo entregable">
+            <p className="flex flex-1 items-center justify-center py-8 text-center text-xs text-muted-foreground">
+              No hay entregables próximos con fecha.
+            </p>
+          </BentoCard>
+        )}
+
+        {/* Producción por día */}
+        <BentoCard title="Producción por día" href="/agency/content?view=calendario">
+          <WeekBars data={weekData} />
+        </BentoCard>
+
+        {/* Anillo de completitud */}
+        <BentoCard
+          title="Producción completada"
+          href="/agency/metrics"
+          contentClassName="items-center justify-center"
+        >
+          <RingStat value={completion} label="publicadas vs. activas" />
+        </BentoCard>
+
+        {/* Checklist (acento) */}
+        <TaskChecklist title="Piezas recientes" items={checklistItems} />
+
+        {/* Funnel por etapa */}
+        <BentoCard className="sm:col-span-2 lg:col-span-2" title="Pipeline de producción" href="/agency/metrics">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <RingStat value={completion} label="completado" size={120} />
+            <div className="flex-1">
+              {funnelSegments.length ? (
+                <SegmentedBar segments={funnelSegments} />
+              ) : (
+                <p className="text-xs text-muted-foreground">Sin producción registrada.</p>
+              )}
+            </div>
+          </div>
+        </BentoCard>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 text-sm font-semibold">Producción por cliente</p>
-            <BarList data={byClient} total={activeIdeas.length} />
-          </CardContent>
-        </Card>
-
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 text-sm font-semibold">Producción por responsable</p>
-            <BarList data={byResponsible} total={activeIdeas.length} />
-          </CardContent>
-        </Card>
-
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
-              <CalendarDays className="size-4 text-flare" />
-              Próximos entregables
+      {/* Calendario semanal */}
+      <div className="mt-4">
+        <BentoCard title="Calendario editorial" href="/agency/content?view=calendario">
+          {timelineEvents.length ? (
+            <WeekTimeline events={timelineEvents} />
+          ) : (
+            <p className="flex items-center gap-1.5 py-8 text-center text-xs text-muted-foreground">
+              <CalendarDays className="size-4" />
+              No hay contenidos con fecha esta semana.
             </p>
-            <div className="space-y-2">
-              {upcoming.map(({ idea, date }) => (
-                <div
-                  key={idea.id}
-                  className="flex items-center justify-between gap-3 rounded-md border border-border bg-secondary/30 px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-medium">{idea.title}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">
-                      {clientName(idea.clientId)} · {idea.responsible}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <IdeaStatusBadge status={idea.status} />
-                    <span className="text-[11px] tabular-nums text-muted-foreground">
-                      {formatDate(date, "d MMM")}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {!upcoming.length && (
-                <p className="text-xs text-muted-foreground">
-                  No hay entregables próximos con fecha.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
-              <AlertTriangle className="size-4 text-amber-400" />
-              Alertas operativas
-            </p>
-            <div className="space-y-2">
-              {overdueTasks.slice(0, 4).map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between gap-3 rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-medium">{t.title}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">
-                      {clientName(t.clientId)} · {t.responsible}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-[11px] font-medium text-red-400">
-                    Venció {formatDate(t.dueDate, "d MMM")}
-                  </span>
-                </div>
-              ))}
-              {clientsAtRisk.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/clients/${c.id}`}
-                  className="flex items-center justify-between gap-3 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 transition-colors hover:bg-amber-500/10"
-                >
-                  <p className="truncate text-xs font-medium">{c.brand}</p>
-                  <HealthBadge health={c.healthStatus} />
-                </Link>
-              ))}
-              {!overdueTasks.length && !clientsAtRisk.length && (
-                <p className="text-xs text-muted-foreground">
-                  Sin alertas operativas. Todo al día. 🔥
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </BentoCard>
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { MeetingFormDialog } from "@/components/forms/meeting-form";
 import { TaskFormDialog } from "@/components/forms/task-form";
 import { useFlare } from "@/lib/store";
@@ -43,6 +44,7 @@ function MeetingRow({ label, value }: { label: string; value: string }) {
 
 export function MeetingsTab({ clientId }: { clientId: string }) {
   const { meetings, deleteMeeting } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ClientMeeting | null>(null);
   const [taskFromMeeting, setTaskFromMeeting] = React.useState<ClientMeeting | null>(null);
@@ -90,7 +92,7 @@ export function MeetingsTab({ clientId }: { clientId: string }) {
                       </span>
                     )}
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}>
                         <MoreHorizontal />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
@@ -103,10 +105,18 @@ export function MeetingsTab({ clientId }: { clientId: string }) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => {
-                            deleteMeeting(m.id);
-                            toast.success("Reunión eliminada");
-                          }}
+                          onClick={() =>
+                            confirm({
+                              title: "¿Eliminar esta reunión?",
+                              description: "Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              destructive: true,
+                              onConfirm: () => {
+                                deleteMeeting(m.id);
+                                toast.success("Reunión eliminada");
+                              },
+                            })
+                          }
                         >
                           <Trash2 /> Eliminar
                         </DropdownMenuItem>
@@ -152,6 +162,7 @@ export function MeetingsTab({ clientId }: { clientId: string }) {
         defaultClientId={clientId}
         defaultMeetingId={taskFromMeeting?.id}
       />
+      {dialog}
     </div>
   );
 }

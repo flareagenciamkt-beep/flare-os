@@ -25,6 +25,7 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SimpleSelect } from "@/components/shared/simple-select";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { TagBadge } from "@/components/shared/badges";
 import { useClientOptions } from "@/components/shared/use-client-options";
 import { PromptFormDialog } from "@/components/forms/prompt-form";
@@ -43,6 +44,7 @@ function PromptCard({
   onEdit: (p: Prompt) => void;
 }) {
   const { clientName, deletePrompt } = useFlare();
+  const { confirm, dialog } = useConfirm();
 
   const copy = async () => {
     await navigator.clipboard.writeText(prompt.promptContent);
@@ -50,6 +52,7 @@ function PromptCard({
   };
 
   return (
+    <>
     <Card className="gap-0 py-0 transition-colors hover:border-foreground/15">
       <CardContent className="flex h-full flex-col gap-2.5 p-4">
         <div className="flex items-start justify-between gap-2">
@@ -67,7 +70,7 @@ function PromptCard({
               <Copy />
             </Button>
             <DropdownMenu>
-              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}>
                 <MoreHorizontal />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -77,10 +80,18 @@ function PromptCard({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={() => {
-                    deletePrompt(prompt.id);
-                    toast.success("Prompt eliminado");
-                  }}
+                  onClick={() =>
+                    confirm({
+                      title: `¿Eliminar "${prompt.title}"?`,
+                      description: "Esta acción no se puede deshacer.",
+                      confirmLabel: "Eliminar",
+                      destructive: true,
+                      onConfirm: () => {
+                        deletePrompt(prompt.id);
+                        toast.success("Prompt eliminado");
+                      },
+                    })
+                  }
                 >
                   <Trash2 /> Eliminar
                 </DropdownMenuItem>
@@ -117,6 +128,8 @@ function PromptCard({
         </div>
       </CardContent>
     </Card>
+    {dialog}
+    </>
   );
 }
 

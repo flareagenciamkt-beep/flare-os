@@ -128,6 +128,11 @@ export default function TasksPage() {
 
       <TasksTable
         tasks={filtered}
+        isFiltered={isFiltered}
+        onCreate={() => {
+          setEditing(null);
+          setFormOpen(true);
+        }}
         onEdit={(task) => {
           setEditing(task);
           setFormOpen(true);

@@ -2,273 +2,257 @@
 
 import Link from "next/link";
 import {
-  AlertTriangle,
-  ArrowUpRight,
+  ArrowRight,
   Building2,
-  PauseCircle,
-  TrendingUp,
+  CalendarDays,
+  CheckSquare,
+  Lightbulb,
+  Sparkles,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { PageHeader } from "@/components/shared/page-header";
-import { StatCard } from "@/components/shared/stat-card";
+import { Button } from "@/components/ui/button";
 import { HealthBadge, PhaseBadge } from "@/components/shared/badges";
+import { InfoHint } from "@/components/shared/info-hint";
+import { WelcomeHeader } from "@/components/dashboard/welcome-header";
+import { SegmentedBar } from "@/components/dashboard/segmented-bar";
+import { BigCounter } from "@/components/dashboard/big-counter";
+import { BentoCard } from "@/components/dashboard/bento-card";
+import { WeekBars } from "@/components/dashboard/week-bars";
+import { RingStat } from "@/components/dashboard/ring-stat";
+import { TaskChecklist } from "@/components/dashboard/task-checklist";
+import { WeekTimeline } from "@/components/dashboard/week-timeline";
 import { useFlare } from "@/lib/store";
 import {
   averageProgress,
-  clientAlerts,
+  clientOperationalProgress,
   ideaDate,
+  ideasPerWeekday,
   isClientAtRisk,
-  isTaskOverdue,
+  isIdeaActive,
+  isTaskOpen,
 } from "@/lib/stats";
 import { formatDate } from "@/lib/dates";
-import { IdeaStatusBadge } from "@/components/shared/badges";
+import { HEALTH_LABELS, type HealthStatus } from "@/lib/types";
+
+const WEEKDAY_LABELS = ["L", "M", "X", "J", "V", "S", "D"];
+const feeFmt = new Intl.NumberFormat("es-CO");
 
 export default function ClientsDashboardPage() {
-  const { clients, ideas, tasks, metrics, accesses, clientName } = useFlare();
+  const { clients, ideas, tasks, metrics, clientName } = useFlare();
 
   const active = clients.filter((c) => c.status === "activo");
-  const paused = clients.filter((c) => c.status === "pausado");
-  const atRisk = clients.filter((c) => c.status === "activo" && isClientAtRisk(c));
-  const withAlerts = active
-    .map((c) => ({ client: c, alerts: clientAlerts(c, ideas, tasks, metrics, accesses) }))
-    .filter((entry) => entry.alerts.length > 0);
+  const atRisk = active.filter(isClientAtRisk);
+  const activeIdeas = ideas.filter(isIdeaActive);
+  const openTasks = tasks.filter(isTaskOpen);
+
   const ranking = [...active].sort(
     (a, b) => b.progressPercentage - a.progressPercentage,
   );
 
-  // Tareas vencidas agrupadas por cliente
-  const overdueByClient = active
-    .map((c) => ({
-      client: c,
-      count: tasks.filter((t) => t.clientId === c.id && isTaskOverdue(t)).length,
-    }))
-    .filter((e) => e.count > 0)
-    .sort((a, b) => b.count - a.count);
+  // Distribución de health (clientes activos) para la barra segmentada.
+  const HEALTH_ORDER: HealthStatus[] = ["bien", "observacion", "riesgo", "critico", "pausado"];
+  const HEALTH_TONE = {
+    bien: "fill",
+    observacion: "dark",
+    riesgo: "outline",
+    critico: "ghost",
+    pausado: "dark",
+  } as const;
+  const healthSegments = HEALTH_ORDER.map((h) => ({
+    label: HEALTH_LABELS[h],
+    value: active.filter((c) => c.healthStatus === h).length,
+    tone: HEALTH_TONE[h],
+  })).filter((s) => s.value > 0);
 
-  // Contenidos a publicar en los próximos 7 días
-  const today = new Date();
-  const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
-  const todayISO = today.toISOString().slice(0, 10);
-  const upcomingContent = ideas
+  // Cliente destacado: el que más requiere atención.
+  const featured = atRisk[0] ?? ranking[0];
+  const featuredProgress = featured
+    ? clientOperationalProgress(featured, ideas, tasks, metrics)
+    : null;
+
+  // Barras por día (entregables/contenidos con fecha).
+  const weekData = ideasPerWeekday(ideas).map((value, i) => ({
+    label: WEEKDAY_LABELS[i],
+    value,
+  }));
+
+  // Checklist: tareas recientes con su estado (done = completada).
+  const checklistItems = [...tasks]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 6)
+    .map((t) => ({
+      id: t.id,
+      icon: CheckSquare,
+      label: t.title,
+      meta: `${clientName(t.clientId)} · ${formatDate(t.dueDate, "d MMM")}`,
+      done: t.status === "completada",
+      href: t.clientId ? `/clients/${t.clientId}` : "/agency/tasks",
+    }));
+
+  // Eventos del calendario semanal (piezas con fecha).
+  const timelineEvents = ideas
     .map((i) => ({ idea: i, date: ideaDate(i) }))
-    .filter(
-      (x): x is { idea: (typeof ideas)[number]; date: string } =>
-        Boolean(x.date) &&
-        x.date! >= todayISO &&
-        x.date! <= inSevenDays &&
-        !["publicada", "pausada", "archivada"].includes(x.idea.status),
-    )
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 8);
-
-  // Próximos entregables comprometidos
-  const deliverables = active.filter((c) => c.nextDeliverable.trim());
+    .filter((x): x is { idea: (typeof ideas)[number]; date: string } => Boolean(x.date))
+    .map((x) => ({
+      id: x.idea.id,
+      title: x.idea.title,
+      sub: clientName(x.idea.clientId),
+      date: x.date,
+      href: "/agency/content?view=calendario",
+    }));
 
   return (
     <div>
-      <PageHeader
-        title="Dashboard de clientes"
-        description="Vista general del estado y progreso de las marcas que atiende Flare."
+      <WelcomeHeader
+        title={<>Bienvenido a Flare OS</>}
+        segmented={
+          healthSegments.length ? (
+            <SegmentedBar segments={healthSegments} />
+          ) : undefined
+        }
+        counters={
+          <>
+            <BigCounter icon={Building2} value={active.length} label="Clientes activos" />
+            <BigCounter icon={Lightbulb} value={activeIdeas.length} label="Ideas activas" />
+            <BigCounter icon={CheckSquare} value={openTasks.length} label="Tareas abiertas" />
+          </>
+        }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Clientes activos" value={active.length} icon={Building2} tone="flare" />
-        <StatCard label="Clientes pausados" value={paused.length} icon={PauseCircle} />
-        <StatCard
-          label="Clientes en riesgo"
-          value={atRisk.length}
-          icon={AlertTriangle}
-          tone={atRisk.length ? "danger" : "success"}
-          hint="Health atrasado o crítico"
-        />
-        <StatCard
-          label="Progreso promedio"
-          value={`${averageProgress(clients)}%`}
-          icon={TrendingUp}
-          tone="success"
-          hint="Solo clientes activos"
-        />
-      </div>
+      {/* Bento principal */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Cliente destacado */}
+        {featured && (
+          <BentoCard
+            className="sm:col-span-2 lg:col-span-1 lg:row-span-2"
+            contentClassName="gap-0"
+            title="Requiere atención"
+            href={`/clients/${featured.id}`}
+          >
+            <div className="mt-1 flex items-center gap-3">
+              <span
+                className="flare-gradient flex size-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white"
+                style={{ fontFamily: "var(--font-display), sans-serif" }}
+              >
+                {featured.brand.slice(0, 2).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold">{featured.brand}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {featured.industry} · {featured.owner}
+                </p>
+              </div>
+            </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 text-sm font-semibold">Ranking de progreso</p>
-            <div className="space-y-3">
-              {ranking.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/clients/${c.id}`}
-                  className="block rounded-md px-2 py-1.5 transition-colors hover:bg-secondary/50"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="truncate text-sm font-medium">{c.brand}</p>
-                    <span className="text-xs tabular-nums text-muted-foreground">
-                      {c.progressPercentage}%
-                    </span>
-                  </div>
-                  <Progress value={c.progressPercentage} className="mt-1.5" />
-                </Link>
-              ))}
-              {!ranking.length && (
-                <p className="text-xs text-muted-foreground">No hay clientes activos.</p>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <HealthBadge health={featured.healthStatus} />
+              <PhaseBadge phase={featured.currentPhase} />
+              {featured.monthlyFee > 0 && (
+                <span className="rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium tabular-nums">
+                  {feeFmt.format(featured.monthlyFee)} {featured.currency}/mes
+                </span>
               )}
             </div>
-          </CardContent>
-        </Card>
 
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
-              <AlertTriangle className="size-4 text-amber-400" />
-              Clientes con alertas
-            </p>
-            <div className="space-y-2">
-              {withAlerts.map(({ client: c, alerts }) => (
-                <Link
-                  key={c.id}
-                  href={`/clients/${c.id}`}
-                  className="block rounded-md border border-border bg-secondary/30 px-3 py-2 transition-colors hover:bg-secondary/60"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="truncate text-sm font-medium">{c.brand}</p>
-                    <HealthBadge health={c.healthStatus} />
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {alerts.map((alert) => (
+            <div className="mt-4 space-y-2.5 border-t border-border pt-3 text-xs">
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Próxima acción</p>
+                <p className="mt-0.5">{featured.nextAction || "Sin definir"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Próximo entregable</p>
+                <p className="mt-0.5">{featured.nextDeliverable || "—"}</p>
+              </div>
+              {featured.activeServices.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground">Servicios activos</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {featured.activeServices.map((s) => (
                       <span
-                        key={alert}
-                        className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400"
+                        key={s}
+                        className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] text-foreground/70"
                       >
-                        {alert}
+                        {s}
                       </span>
                     ))}
                   </div>
-                </Link>
-              ))}
-              {!withAlerts.length && (
-                <p className="text-xs text-muted-foreground">
-                  Todo en orden: ningún cliente con alertas. 🔥
-                </p>
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-auto w-full"
+              render={<Link href={`/clients/${featured.id}`} />}
+            >
+              Ver detalle del cliente
+              <ArrowRight data-icon="inline-end" />
+            </Button>
+          </BentoCard>
+        )}
+
+        {/* Progreso semanal */}
+        <BentoCard title="Contenido por día" href="/agency/content?view=calendario">
+          <WeekBars data={weekData} />
+        </BentoCard>
+
+        {/* Anillo de progreso promedio */}
+        <BentoCard
+          title={
+            <span className="flex items-center gap-1.5">
+              Progreso promedio
+              <InfoHint text="Promedio del % de avance de los clientes activos. Combina producción, tareas, calendario y el progreso manual de cada cuenta." />
+            </span>
+          }
+          href="/clients/progress"
+          contentClassName="items-center justify-center"
+        >
+          <RingStat value={averageProgress(clients)} label="clientes activos" />
+        </BentoCard>
+
+        {/* Checklist (card de acento) */}
+        <TaskChecklist title="Tareas del equipo" items={checklistItems} />
+
+        {/* Estado operativo del cliente destacado */}
+        {featuredProgress && (
+          <BentoCard
+            className="sm:col-span-2 lg:col-span-2"
+            title={`Avance operativo · ${featured!.brand}`}
+            href={`/clients/${featured!.id}`}
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <RingStat value={featuredProgress.overall} label="general" size={120} />
+              <div className="flex-1 space-y-3">
+                <SegmentedBar
+                  segments={[
+                    { label: "Producción", value: Math.max(featuredProgress.production, 1), tone: "fill" },
+                    { label: "Tareas", value: Math.max(featuredProgress.tasks, 1), tone: "dark" },
+                    { label: "Calendario", value: Math.max(featuredProgress.calendar, 1), tone: "outline" },
+                  ]}
+                />
+                <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Sparkles className="size-3 text-flare" />
+                  Combina producción, tareas y calendario del cliente.
+                </p>
+              </div>
+            </div>
+          </BentoCard>
+        )}
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 text-sm font-semibold">Próximos entregables</p>
-            <div className="space-y-2">
-              {deliverables.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/clients/${c.id}`}
-                  className="block rounded-md border border-border bg-secondary/30 px-3 py-2 transition-colors hover:bg-secondary/60"
-                >
-                  <p className="truncate text-xs font-semibold">{c.brand}</p>
-                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                    {c.nextDeliverable}
-                  </p>
-                </Link>
-              ))}
-              {!deliverables.length && (
-                <p className="text-xs text-muted-foreground">
-                  Sin entregables comprometidos.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 text-sm font-semibold">Tareas vencidas por cliente</p>
-            <div className="space-y-2">
-              {overdueByClient.map(({ client: c, count }) => (
-                <Link
-                  key={c.id}
-                  href={`/clients/${c.id}`}
-                  className="flex items-center justify-between gap-3 rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 transition-colors hover:bg-red-500/10"
-                >
-                  <p className="truncate text-xs font-medium">{c.brand}</p>
-                  <span className="shrink-0 text-xs font-semibold text-red-400">
-                    {count} vencida{count > 1 ? "s" : ""}
-                  </span>
-                </Link>
-              ))}
-              {!overdueByClient.length && (
-                <p className="text-xs text-muted-foreground">
-                  Sin tareas vencidas. 🔥
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="gap-0 py-0">
-          <CardContent className="p-4">
-            <p className="mb-3 text-sm font-semibold">A publicar esta semana</p>
-            <div className="space-y-2">
-              {upcomingContent.map(({ idea, date }) => (
-                <div
-                  key={idea.id}
-                  className="rounded-md border border-border bg-secondary/30 px-3 py-2"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-xs font-medium">{idea.title}</p>
-                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                      {formatDate(date, "d MMM")}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <p className="truncate text-[11px] text-muted-foreground">
-                      {clientName(idea.clientId)}
-                    </p>
-                    <IdeaStatusBadge status={idea.status} />
-                  </div>
-                </div>
-              ))}
-              {!upcomingContent.length && (
-                <p className="text-xs text-muted-foreground">
-                  Nada programado para los próximos 7 días.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Calendario semanal */}
+      <div className="mt-4">
+        <BentoCard title="Calendario de contenido" href="/agency/content?view=calendario">
+          {timelineEvents.length ? (
+            <WeekTimeline events={timelineEvents} />
+          ) : (
+            <p className="flex items-center gap-1.5 py-8 text-center text-xs text-muted-foreground">
+              <CalendarDays className="size-4" />
+              No hay contenidos programados esta semana.
+            </p>
+          )}
+        </BentoCard>
       </div>
-
-      <Card className="mt-4 gap-0 py-0">
-        <CardContent className="p-4">
-          <p className="mb-3 text-sm font-semibold">Próximas acciones por cliente</p>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {active.map((c) => (
-              <Link
-                key={c.id}
-                href={`/clients/${c.id}`}
-                className="group rounded-md border border-border bg-secondary/30 px-3 py-2.5 transition-colors hover:bg-secondary/60"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-xs font-semibold">{c.brand}</p>
-                  <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-flare" />
-                </div>
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                  {c.nextAction || "Sin próxima acción definida"}
-                </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <PhaseBadge phase={c.currentPhase} />
-                  <span className="text-[10px] text-muted-foreground">{c.owner}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

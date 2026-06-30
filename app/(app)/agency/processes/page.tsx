@@ -23,6 +23,7 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SimpleSelect } from "@/components/shared/simple-select";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { ProcessStatusBadge } from "@/components/shared/badges";
 import { ProcessFormDialog } from "@/components/forms/process-form";
 import { useFlare } from "@/lib/store";
@@ -41,8 +42,10 @@ function ProcessCard({
   onEdit: (p: Process) => void;
 }) {
   const { clientName, deleteProcess } = useFlare();
+  const { confirm, dialog } = useConfirm();
 
   return (
+    <>
     <Card className="gap-0 py-0 transition-colors hover:border-foreground/15">
       <CardContent className="flex h-full flex-col gap-2.5 p-4">
         <div className="flex items-start justify-between gap-2">
@@ -58,7 +61,7 @@ function ProcessCard({
           <div className="flex shrink-0 items-center gap-1.5">
             <ProcessStatusBadge status={process.status} />
             <DropdownMenu>
-              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" />}>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}>
                 <MoreHorizontal />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -68,10 +71,18 @@ function ProcessCard({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={() => {
-                    deleteProcess(process.id);
-                    toast.success("Proceso eliminado");
-                  }}
+                  onClick={() =>
+                    confirm({
+                      title: `¿Eliminar "${process.title}"?`,
+                      description: "Esta acción no se puede deshacer.",
+                      confirmLabel: "Eliminar",
+                      destructive: true,
+                      onConfirm: () => {
+                        deleteProcess(process.id);
+                        toast.success("Proceso eliminado");
+                      },
+                    })
+                  }
                 >
                   <Trash2 /> Eliminar
                 </DropdownMenuItem>
@@ -104,6 +115,8 @@ function ProcessCard({
         </div>
       </CardContent>
     </Card>
+    {dialog}
+    </>
   );
 }
 

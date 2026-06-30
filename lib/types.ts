@@ -2,18 +2,25 @@
 // Regla clave: ideas, tasks, resources, prompts y processes tienen clientId
 // opcional. Con clientId → pertenece a un cliente; sin él → interno de Flare.
 
-export type ClientStatus = "activo" | "pausado" | "prospecto" | "cerrado";
+export type ClientStatus =
+  | "prospecto"
+  | "onboarding"
+  | "activo"
+  | "pausado"
+  | "cerrado"
+  | "perdido";
 export type Priority = "baja" | "media" | "alta" | "urgente";
-export type ClientPriority = "baja" | "media" | "alta";
+export type ClientPriority = "baja" | "media" | "alta" | "urgente";
 export type ClientPhase =
   | "onboarding"
   | "estrategia"
   | "produccion"
+  | "revision_interna"
+  | "revision_cliente"
   | "publicacion"
   | "optimizacion"
-  | "pausa"
-  | "cerrado";
-export type HealthStatus = "bien" | "atencion" | "atrasado" | "critico";
+  | "reporte_mensual";
+export type HealthStatus = "bien" | "observacion" | "riesgo" | "critico" | "pausado";
 
 export interface ClientLink {
   label: string;
@@ -47,8 +54,35 @@ export interface Client {
   activeChannels: string[];
   nextDeliverable: string;
   lastUpdate: string; // ISO date
+  // V1.3 — campos estructurados de los modales premium (todos opcionales)
+  monthlyGoalType?: string;
+  monthlyGoalValue?: number;
+  contentGoalType?: string;
+  contentGoalValue?: number;
+  reviewFrequency?: string;
+  mainFormats?: string[];
+  publishFrequency?: string;
+  contractType?: string;
+  paymentMethod?: string;
+  clientPaymentStatus?: string;
+  renewalDate?: string | null;
+  portalContactName?: string;
+  portalAccessEmail?: string;
+  portalRole?: string;
+  portalVisibility?: string;
+  portalPermissions?: ClientPortalPermissions;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ClientPortalPermissions {
+  metrics: boolean;
+  calendar: boolean;
+  comment: boolean;
+  approve: boolean;
+  createTasks: boolean;
+  reports: boolean;
+  download: boolean;
 }
 
 // ─── Vista 360 (V1.1) ───────────────────────────────────────────────────────
@@ -152,21 +186,23 @@ export type IdeaCategory =
   | "diseno"
   | "ventas"
   | "otro";
+// Estados simplificados del ciclo de producción (7). Los antiguos
+// "validada", "pausada" y "archivada" se remapearon a estos.
 export type IdeaStatus =
   | "idea"
-  | "validada"
   | "en_produccion"
   | "en_revision_interna"
   | "en_revision_cliente"
   | "aprobada"
   | "programada"
-  | "publicada"
-  | "pausada"
-  | "archivada";
+  | "publicada";
 export type IdeaFormat =
   | "carrusel"
   | "reel"
+  | "post"
   | "historia"
+  | "tiktok"
+  | "short"
   | "blog"
   | "email"
   | "landing"
@@ -191,6 +227,7 @@ export interface Idea {
   title: string;
   description: string;
   category: IdeaCategory;
+  ideaType?: string; // tipo de idea (preset) — V1.3
   status: IdeaStatus;
   priority: Priority;
   format: IdeaFormat;
@@ -206,11 +243,28 @@ export interface Idea {
   script?: string;
   designNotes?: string;
   externalUrl?: string;
-  coverImage?: string; // URL de la pieza/diseño para la vista previa del feed
+  coverImage?: string; // URL de portada (primera imagen) para la vista previa
+  images?: string[]; // galería de imágenes (carruseles = varias) — V1.3
   // Aprobación desde el portal de clientes (opcional: mocks y forms no la tocan)
   clientApproval?: ClientApproval;
   clientFeedback?: string;
   clientApprovalAt?: string | null;
+  // Registro de aprobación: quién dio el OK y cuándo (cliente o equipo).
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Comentarios/hilo de una pieza. Los crean equipo o cliente desde el detalle.
+export type CommentAuthorRole = "admin" | "team" | "client";
+
+export interface IdeaComment {
+  id: string;
+  ideaId: string;
+  author: string; // nombre o email visible
+  authorRole: CommentAuthorRole;
+  body: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -222,22 +276,35 @@ export type TaskStatus =
   | "en_revision"
   | "completada";
 export type TaskArea =
+  | "estrategia"
   | "contenido"
   | "diseno"
-  | "copy"
+  | "video"
   | "pauta"
+  | "community"
+  | "metricas"
+  | "cliente"
+  | "admin"
+  // Legacy (datos existentes)
+  | "copy"
   | "web"
   | "automatizacion"
-  | "estrategia"
   | "cuenta"
   | "ventas"
   | "otro";
+
+export interface TaskChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
 
 export interface Task {
   id: string;
   clientId: string | null;
   ideaId: string | null;
   meetingId?: string | null; // V1.2: relación opcional con reunión
+  taskType?: string; // tipo de tarea (preset) — V1.3
   title: string;
   description: string;
   status: TaskStatus;
@@ -247,6 +314,7 @@ export interface Task {
   area: TaskArea;
   notes: string;
   relatedLink: string;
+  checklist?: TaskChecklistItem[];
   createdAt: string;
   updatedAt: string;
 }
@@ -332,11 +400,15 @@ export interface PortalClient {
   contentGoal: string;
 }
 
+// Roles del sistema. "admin" y "team" operan el módulo agencia; "client" usa
+// solo el portal. admin tiene capacidades extra (ajustes, facturación, gestión).
+export type Role = "admin" | "team" | "client";
+
 export interface Profile {
   id: string;
   name: string;
   email: string;
-  role: "team" | "client";
+  role: Role;
   clientId: string | null;
 }
 
@@ -366,10 +438,12 @@ export interface ClientMetric {
 // ─── Labels y opciones (para selects, badges y filtros) ────────────────────
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
+  prospecto: "Prospecto",
+  onboarding: "Onboarding",
   activo: "Activo",
   pausado: "Pausado",
-  prospecto: "Prospecto",
   cerrado: "Cerrado",
+  perdido: "Perdido",
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {
@@ -383,30 +457,29 @@ export const PHASE_LABELS: Record<ClientPhase, string> = {
   onboarding: "Onboarding",
   estrategia: "Estrategia",
   produccion: "Producción",
+  revision_interna: "Revisión interna",
+  revision_cliente: "Revisión cliente",
   publicacion: "Publicación",
   optimizacion: "Optimización",
-  pausa: "Pausa",
-  cerrado: "Cerrado",
+  reporte_mensual: "Reporte mensual",
 };
 
 export const HEALTH_LABELS: Record<HealthStatus, string> = {
   bien: "Bien",
-  atencion: "Atención",
-  atrasado: "Atrasado",
+  observacion: "En observación",
+  riesgo: "En riesgo",
   critico: "Crítico",
+  pausado: "Pausado",
 };
 
 export const IDEA_STATUS_LABELS: Record<IdeaStatus, string> = {
   idea: "Idea",
-  validada: "Validada",
   en_produccion: "En producción",
   en_revision_interna: "Revisión interna",
   en_revision_cliente: "Revisión cliente",
   aprobada: "Aprobada",
   programada: "Programada",
   publicada: "Publicada",
-  pausada: "Pausada",
-  archivada: "Archivada",
 };
 
 export const IDEA_CATEGORY_LABELS: Record<IdeaCategory, string> = {
@@ -423,11 +496,14 @@ export const IDEA_CATEGORY_LABELS: Record<IdeaCategory, string> = {
 export const FORMAT_LABELS: Record<IdeaFormat, string> = {
   carrusel: "Carrusel",
   reel: "Reel",
+  post: "Post",
   historia: "Historia",
+  tiktok: "TikTok",
+  short: "Short",
   blog: "Blog",
   email: "Email",
   landing: "Landing",
-  anuncio: "Anuncio",
+  anuncio: "Anuncio (Ad)",
   automatizacion: "Automatización",
   otro: "Otro",
 };
@@ -445,24 +521,43 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   pendiente: "Pendiente",
-  en_progreso: "En progreso",
+  en_progreso: "En proceso",
   bloqueada: "Bloqueada",
   en_revision: "En revisión",
   completada: "Completada",
 };
 
 export const AREA_LABELS: Record<TaskArea, string> = {
+  estrategia: "Estrategia",
   contenido: "Contenido",
   diseno: "Diseño",
-  copy: "Copy",
+  video: "Video",
   pauta: "Pauta",
+  community: "Community",
+  metricas: "Métricas",
+  cliente: "Cliente",
+  admin: "Admin",
+  copy: "Copy",
   web: "Web",
   automatizacion: "Automatización",
-  estrategia: "Estrategia",
   cuenta: "Cuenta",
   ventas: "Ventas",
   otro: "Otro",
 };
+
+// Áreas que se ofrecen en el modal de tarea (spec). Las legacy quedan válidas
+// para datos existentes pero no se listan.
+export const TASK_AREA_OPTIONS = [
+  "estrategia",
+  "contenido",
+  "diseno",
+  "video",
+  "pauta",
+  "community",
+  "metricas",
+  "cliente",
+  "admin",
+].map((v) => ({ value: v, label: AREA_LABELS[v as TaskArea] }));
 
 export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
   logo: "Logo",
@@ -531,11 +626,9 @@ export const CLIENT_APPROVAL_LABELS: Record<ClientApproval, string> = {
   cambios_solicitados: "Cambios solicitados",
 };
 
-// Columnas del kanban: el flujo principal de producción.
-// "pausada" y "archivada" no son columnas: se llega vía menú "Mover a".
+// Columnas del kanban: el flujo principal de producción (los 7 estados).
 export const KANBAN_COLUMNS: IdeaStatus[] = [
   "idea",
-  "validada",
   "en_produccion",
   "en_revision_interna",
   "en_revision_cliente",

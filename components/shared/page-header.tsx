@@ -6,11 +6,11 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div className="flex flex-col gap-[5px]">
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4 pt-2">
+      <div className="flex flex-col gap-1.5">
         <h1
-          className="text-[27px] font-semibold"
-          style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.2px" }}
+          className="text-[28px] font-semibold leading-tight sm:text-[34px]"
+          style={{ fontFamily: "var(--font-display), sans-serif", letterSpacing: "-0.4px" }}
         >
           {title}
         </h1>

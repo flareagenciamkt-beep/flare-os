@@ -6,7 +6,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Plus, Receipt, Wallet } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock, Plus, Receipt, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BillingFormDialog } from "@/components/forms/billing-form";
+import { useRole } from "@/components/layout/role-provider";
 import { useFlare } from "@/lib/store";
 import { formatDate } from "@/lib/dates";
 import {
@@ -55,9 +56,23 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
 
 export default function ClientsBillingPage() {
   const { clients, billing } = useFlare();
+  const { can } = useRole();
   const [billingClient, setBillingClient] = React.useState<Client | null>(null);
 
   const active = clients.filter((c) => c.status === "activo");
+
+  if (!can("viewBilling")) {
+    return (
+      <div>
+        <PageHeader title="Facturación" description="Fees y estado de cobros." />
+        <EmptyState
+          icon={Lock}
+          title="Acceso restringido"
+          description="Solo los administradores pueden ver la facturación de la agencia."
+        />
+      </div>
+    );
+  }
 
   // Ingreso mensual acordado, desglosado por moneda.
   const feeByCurrency = new Map<string, number>();
@@ -170,7 +185,8 @@ export default function ClientsBillingPage() {
 
       <p className="mb-2 mt-6 text-sm font-semibold">Clientes activos</p>
       {active.length ? (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <>
+        <div className="hidden overflow-hidden rounded-lg border border-border bg-card md:block">
           <Table className="min-w-[56rem]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -242,6 +258,49 @@ export default function ClientsBillingPage() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Mobile: cards */}
+        <div className="space-y-2.5 md:hidden">
+          {active.map((c) => {
+            const last = lastByClient.get(c.id);
+            return (
+              <div key={c.id} className="rounded-lg border border-border bg-card p-3.5">
+                <div className="flex items-start justify-between gap-2">
+                  <Link href={`/clients/${c.id}`} className="text-sm font-semibold hover:text-flare-soft">
+                    {c.brand}
+                  </Link>
+                  {last ? (
+                    <StatusBadge status={last.paymentStatus} />
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground">Sin cobros</span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+                  {c.monthlyFee > 0 ? `${fmt.format(c.monthlyFee)} ${c.currency}/mes` : "Sin fee definido"}
+                </p>
+                {c.activeServices.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {c.activeServices.map((s) => (
+                      <span key={s} className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] text-foreground/70">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2.5 flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground">
+                    {last ? `Último: ${formatDate(last.billingDate)}` : "Sin cobros registrados"}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={() => setBillingClient(c)}>
+                    <Plus data-icon="inline-start" />
+                    Registrar cobro
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        </>
       ) : (
         <EmptyState
           icon={Receipt}
@@ -253,7 +312,7 @@ export default function ClientsBillingPage() {
       {recent.length > 0 && (
         <>
           <p className="mb-2 mt-6 text-sm font-semibold">Cobros recientes</p>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="hidden overflow-hidden rounded-lg border border-border bg-card md:block">
             <Table className="min-w-[56rem]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -286,6 +345,29 @@ export default function ClientsBillingPage() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile: cards */}
+          <div className="space-y-2.5 md:hidden">
+            {recent.map((b) => (
+              <div key={b.id} className="rounded-lg border border-border bg-card p-3.5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium">{brandOf(b.clientId)}</p>
+                  <StatusBadge status={b.paymentStatus} />
+                </div>
+                <div className="mt-1.5 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{formatDate(b.billingDate)}</span>
+                  <span className="font-medium tabular-nums">
+                    {fmt.format(b.monthlyFee)} {b.currency}
+                  </span>
+                </div>
+                {b.includedServices && (
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {b.includedServices}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         </>
       )}

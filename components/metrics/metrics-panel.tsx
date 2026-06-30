@@ -2,13 +2,17 @@
 
 import * as React from "react";
 import {
+  ArrowDownRight,
+  ArrowUpRight,
   Eye,
   Heart,
   LineChart,
   MessageCircle,
+  Minus,
   MoreHorizontal,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
   Users,
 } from "lucide-react";
@@ -30,20 +34,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { StatCard } from "@/components/shared/stat-card";
+import { StatCard, type StatTrend } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useConfirm } from "@/components/shared/use-confirm";
 import { CHART_COLORS, StackedBarChart, TrendChart } from "@/components/shared/charts";
 import { MetricFormDialog } from "@/components/forms/metric-form";
 import { useFlare } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import { MONTH_LABELS, type ClientMetric } from "@/lib/types";
 
 const fmt = new Intl.NumberFormat("es-CO");
 
-function delta(current: number, previous: number | undefined) {
+// Variación vs período anterior, con dirección para color + icono.
+// Umbral de ±1% para considerar "estable".
+function trend(current: number, previous: number | undefined): StatTrend | undefined {
   if (previous === undefined || previous === 0) return undefined;
   const pct = ((current - previous) / previous) * 100;
+  const direction: StatTrend["direction"] =
+    pct > 1 ? "up" : pct < -1 ? "down" : "flat";
   const sign = pct >= 0 ? "+" : "";
-  return `${sign}${pct.toFixed(1)}% vs mes anterior`;
+  return { label: `${sign}${pct.toFixed(1)}% vs mes anterior`, direction };
 }
 
 export function periodLabel(m: ClientMetric) {
@@ -66,35 +76,123 @@ export function MetricsCards({ metrics }: { metrics: ClientMetric[] }) {
   const previous = sorted[1];
   if (!latest) return null;
 
+  const noHistory = !previous;
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Seguidores Instagram"
           value={fmt.format(latest.instagramFollowers)}
-          hint={delta(latest.instagramFollowers, previous?.instagramFollowers)}
+          hint={noHistory ? `Mes: ${periodLabel(latest)}` : undefined}
+          trend={trend(latest.instagramFollowers, previous?.instagramFollowers)}
           icon={Users}
           tone="flare"
         />
         <StatCard
           label="Alcance mensual"
           value={fmt.format(latest.monthlyReach)}
-          hint={delta(latest.monthlyReach, previous?.monthlyReach)}
+          trend={trend(latest.monthlyReach, previous?.monthlyReach)}
           icon={Eye}
         />
         <StatCard
           label="Interacciones"
           value={fmt.format(latest.interactions)}
-          hint={delta(latest.interactions, previous?.interactions)}
+          trend={trend(latest.interactions, previous?.interactions)}
           icon={Heart}
         />
         <StatCard
           label="Leads generados"
           value={fmt.format(latest.leadsGenerated)}
-          hint={delta(latest.leadsGenerated, previous?.leadsGenerated)}
+          trend={trend(latest.leadsGenerated, previous?.leadsGenerated)}
           icon={MessageCircle}
           tone="success"
         />
+      </div>
+      {noHistory && (
+        <p className="text-[11px] text-muted-foreground">
+          Aún no hay suficiente histórico para mostrar variación vs. el mes
+          anterior. Registra otro mes para ver tendencias.
+        </p>
+      )}
     </div>
+  );
+}
+
+// Mini insights automáticos: comparan el último mes con el anterior y resumen
+// la evolución en lenguaje claro (con color + icono). Los usa el portal.
+const INSIGHT_METRICS: { key: keyof ClientMetric; noun: string }[] = [
+  { key: "monthlyReach", noun: "alcance" },
+  { key: "leadsGenerated", noun: "número de leads" },
+  { key: "interactions", noun: "interacciones" },
+  { key: "instagramFollowers", noun: "comunidad en Instagram" },
+];
+
+export function MetricsInsights({ metrics }: { metrics: ClientMetric[] }) {
+  const sorted = [...metrics].sort(
+    (a, b) => b.periodYear - a.periodYear || b.periodMonth - a.periodMonth,
+  );
+  const latest = sorted[0];
+  const previous = sorted[1];
+  if (!latest) return null;
+
+  if (!previous) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-card/50 px-4 py-3 text-xs text-muted-foreground">
+        Aún no hay suficiente histórico para comparar meses. Con el próximo
+        registro te mostraremos cómo evolucionan tus resultados.
+      </div>
+    );
+  }
+
+  const insights = INSIGHT_METRICS.map(({ key, noun }) => {
+    const current = latest[key] as number;
+    const prev = previous[key] as number;
+    if (typeof current !== "number" || typeof prev !== "number" || prev === 0) {
+      return null;
+    }
+    const pct = ((current - prev) / prev) * 100;
+    const abs = Math.abs(pct);
+    const direction: StatTrend["direction"] = pct > 1 ? "up" : pct < -1 ? "down" : "flat";
+    let text: string;
+    if (direction === "flat") {
+      text = `Tu ${noun} se mantiene estable (${pct >= 0 ? "+" : ""}${pct.toFixed(0)}%).`;
+    } else if (direction === "up") {
+      text = `Tu ${noun} creció ${abs.toFixed(0)}% respecto al mes anterior.`;
+    } else {
+      text = `Tu ${noun} bajó ${abs.toFixed(0)}% respecto al mes anterior.`;
+    }
+    return { text, direction };
+  }).filter((x): x is { text: string; direction: StatTrend["direction"] } => x !== null);
+
+  if (!insights.length) return null;
+
+  const ICON: Record<StatTrend["direction"], { Icon: typeof ArrowUpRight; cls: string }> = {
+    up: { Icon: ArrowUpRight, cls: "text-[#3DD68C]" },
+    down: { Icon: ArrowDownRight, cls: "text-[#FF5C5C]" },
+    flat: { Icon: Minus, cls: "text-[#A39A91]" },
+  };
+
+  return (
+    <Card className="gap-0 py-0">
+      <CardContent className="p-4">
+        <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
+          <Sparkles className="size-4 text-flare" />
+          Resumen del mes
+        </p>
+        <ul className="space-y-2">
+          {insights.map(({ text, direction }, idx) => {
+            const { Icon, cls } = ICON[direction];
+            return (
+              <li key={idx} className="flex items-start gap-2 text-xs">
+                <Icon className={cn("mt-0.5 size-3.5 shrink-0", cls)} aria-hidden />
+                <span>{text}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -131,9 +229,16 @@ export function MetricsCharts({ metrics }: { metrics: ClientMetric[] }) {
   const series = (pick: (m: ClientMetric) => number) =>
     chrono.map((m) => ({ label: monthLabel(m), value: pick(m) }));
   const hasAdSpend = chrono.some((m) => m.adSpend > 0);
+  const singlePoint = chrono.length < 2;
 
   return (
     <div className="space-y-4">
+      {singlePoint && (
+        <p className="rounded-md border border-dashed border-border bg-card/50 px-3 py-2 text-[11px] text-muted-foreground">
+          Aún no hay suficiente histórico para dibujar una tendencia. Mostramos el
+          único registro disponible; con dos o más meses verás la evolución.
+        </p>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <ChartCard title="Seguidores en Instagram">
           <TrendChart points={series((m) => m.instagramFollowers)} color={CHART_COLORS.magenta} />
@@ -251,7 +356,7 @@ export function MetricsTable({
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger
-                        render={<Button variant="ghost" size="icon-xs" />}
+                        render={<Button variant="ghost" size="icon-xs" aria-label="Más opciones" />}
                       >
                         <MoreHorizontal />
                       </DropdownMenuTrigger>
@@ -301,6 +406,7 @@ export function MetricsDisplay(props: MetricsDisplayProps) {
 // Panel interno (equipo): MetricsDisplay + registro/edición vía store.
 export function MetricsPanel({ clientId }: { clientId: string }) {
   const { metrics, deleteMetric } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ClientMetric | null>(null);
 
@@ -335,10 +441,18 @@ export function MetricsPanel({ clientId }: { clientId: string }) {
           setEditing(m);
           setFormOpen(true);
         }}
-        onDelete={(m) => {
-          deleteMetric(m.id);
-          toast.success("Registro eliminado");
-        }}
+        onDelete={(m) =>
+          confirm({
+            title: `¿Eliminar el registro de ${periodLabel(m)}?`,
+            description: "Esta acción no se puede deshacer.",
+            confirmLabel: "Eliminar",
+            destructive: true,
+            onConfirm: () => {
+              deleteMetric(m.id);
+              toast.success("Registro eliminado");
+            },
+          })
+        }
       />
 
       <MetricFormDialog
@@ -347,6 +461,7 @@ export function MetricsPanel({ clientId }: { clientId: string }) {
         metric={editing}
         defaultClientId={clientId}
       />
+      {dialog}
     </div>
   );
 }

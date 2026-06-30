@@ -7,6 +7,7 @@ import type {
   ClientNote,
   ClientStrategy,
   Idea,
+  IdeaComment,
   Process,
   Prompt,
   Resource,
@@ -59,7 +60,7 @@ export const MOCK_CLIENTS: Client[] = [
     owner: "Sara",
     priority: "alta",
     currentPhase: "publicacion",
-    healthStatus: "atencion",
+    healthStatus: "observacion",
     progressPercentage: 58,
     description:
       "Repuestos y accesorios automotrices. Foco en contenido de producto y promociones mensuales.",
@@ -122,7 +123,7 @@ export const MOCK_CLIENTS: Client[] = [
     owner: "Andrés",
     priority: "media",
     currentPhase: "produccion",
-    healthStatus: "atrasado",
+    healthStatus: "riesgo",
     progressPercentage: 44,
     description:
       "Fabricación de estructuras metálicas, puertas y rejas. Contenido de portafolio y antes/después.",
@@ -154,8 +155,8 @@ export const MOCK_CLIENTS: Client[] = [
     status: "pausado",
     owner: "Sara",
     priority: "baja",
-    currentPhase: "pausa",
-    healthStatus: "atencion",
+    currentPhase: "optimizacion",
+    healthStatus: "observacion",
     progressPercentage: 60,
     description:
       "Servicios de cuidado y enfermería domiciliaria. Pausa temporal por reestructuración interna del cliente.",
@@ -419,7 +420,7 @@ export const MOCK_IDEAS: Idea[] = [
     title: "Reel de bienvenida: conoce el estudio",
     description: "Tour del estudio con música tendencia, para arrancar si firman.",
     category: "contenido",
-    status: "pausada",
+    status: "idea",
     priority: "media",
     format: "reel",
     channel: "instagram",
@@ -476,7 +477,7 @@ export const MOCK_IDEAS: Idea[] = [
     title: "Historia: detrás de cámaras en bodega",
     description: "Contenido orgánico ligero para humanizar la marca.",
     category: "contenido",
-    status: "archivada",
+    status: "idea",
     priority: "baja",
     format: "historia",
     channel: "instagram",
@@ -1195,5 +1196,27 @@ export const MOCK_BILLING: ClientBilling[] = [
     observations: "Recordatorio enviado el 8 de junio.",
     createdAt: "2026-06-01",
     updatedAt: "2026-06-08",
+  },
+];
+
+// Comentarios de ejemplo en piezas (hilo equipo ↔ cliente).
+export const MOCK_COMMENTS: IdeaComment[] = [
+  {
+    id: "cm-1",
+    ideaId: "i-2",
+    author: "Sara",
+    authorRole: "team",
+    body: "Cliente, ¿este copy va alineado con la promo de junio?",
+    createdAt: "2026-06-09",
+    updatedAt: "2026-06-09",
+  },
+  {
+    id: "cm-2",
+    ideaId: "i-2",
+    author: "Ocho Pilates",
+    authorRole: "client",
+    body: "Sí, pero subamos el tono motivacional en la primera línea.",
+    createdAt: "2026-06-10",
+    updatedAt: "2026-06-10",
   },
 ];

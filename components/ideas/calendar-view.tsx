@@ -28,15 +28,12 @@ const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 const STATUS_DOT: Record<IdeaStatus, string> = {
   idea: "bg-zinc-400",
-  validada: "bg-sky-400",
   en_produccion: "bg-flare",
   en_revision_interna: "bg-violet-400",
   en_revision_cliente: "bg-fuchsia-400",
   aprobada: "bg-teal-400",
   programada: "bg-amber-400",
   publicada: "bg-emerald-400",
-  pausada: "bg-orange-400",
-  archivada: "bg-zinc-600",
 };
 
 interface CalendarViewProps {
@@ -66,6 +63,15 @@ export function CalendarView({
     start: startOfWeek(month, { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }),
   });
+
+  // Vista agenda (mobile): piezas del mes agrupadas por día.
+  const monthAgenda = dated
+    .filter((x) => isSameMonth(parseISO(x.date), month))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const agendaByDay = monthAgenda.reduce<Record<string, Idea[]>>((acc, x) => {
+    (acc[x.date] ??= []).push(x.idea);
+    return acc;
+  }, {});
 
   const today = new Date();
   const upcoming = dated
@@ -108,7 +114,7 @@ export function CalendarView({
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-border bg-border">
+          <div className="hidden grid-cols-7 gap-px overflow-hidden rounded-lg border border-border bg-border md:grid">
             {WEEKDAYS.map((d) => (
               <div
                 key={d}
@@ -190,6 +196,57 @@ export function CalendarView({
                 </div>
               );
             })}
+          </div>
+
+          {/* Mobile: vista agenda (lista por día) */}
+          <div className="md:hidden">
+            {Object.keys(agendaByDay).length ? (
+              <div className="space-y-3">
+                {Object.entries(agendaByDay).map(([date, dayIdeas]) => (
+                  <div key={date}>
+                    <p
+                      className={cn(
+                        "mb-1.5 text-xs font-semibold capitalize",
+                        isSameDay(parseISO(date), today) && "text-flare",
+                      )}
+                    >
+                      {format(parseISO(date), "EEEE d 'de' MMMM", { locale: es })}
+                    </p>
+                    <div className="space-y-1.5">
+                      {dayIdeas.map((idea) => (
+                        <button
+                          key={idea.id}
+                          onClick={() => onEdit(idea)}
+                          className="flex w-full items-center gap-2 rounded-md border border-border bg-secondary/30 px-2.5 py-2 text-left transition-colors hover:bg-secondary/60"
+                        >
+                          <span
+                            className={cn(
+                              "size-2 shrink-0 rounded-full",
+                              STATUS_DOT[idea.status],
+                            )}
+                          />
+                          <span className="min-w-0 flex-1">
+                            {showClient && (
+                              <span className="block truncate text-[10px] font-medium uppercase tracking-wide text-flare-soft">
+                                {clientName(idea.clientId)}
+                              </span>
+                            )}
+                            <span className="block truncate text-xs font-medium">
+                              {idea.title}
+                            </span>
+                          </span>
+                          <IdeaStatusBadge status={idea.status} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-6 text-center text-xs text-muted-foreground">
+                No hay contenidos con fecha este mes.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

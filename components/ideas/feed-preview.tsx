@@ -16,15 +16,12 @@ import {
 
 const STATUS_DOT: Record<IdeaStatus, string> = {
   idea: "bg-zinc-400",
-  validada: "bg-sky-400",
   en_produccion: "bg-flare",
   en_revision_interna: "bg-violet-400",
   en_revision_cliente: "bg-fuchsia-400",
   aprobada: "bg-teal-400",
   programada: "bg-amber-400",
   publicada: "bg-emerald-400",
-  pausada: "bg-orange-400",
-  archivada: "bg-zinc-600",
 };
 
 const FORMAT_ICON: Partial<Record<IdeaFormat, React.ComponentType<{ className?: string }>>> = {
@@ -190,7 +187,7 @@ export function FeedPreview({
   clientName = () => "Cliente",
 }: FeedPreviewProps) {
 
-  const visible = ideas.filter((i) => i.status !== "archivada");
+  const visible = ideas;
 
   const groups = groupByClient
     ? Array.from(
@@ -206,14 +203,12 @@ export function FeedPreview({
     <div>
       {/* Leyenda de estados */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        {(Object.keys(STATUS_DOT) as IdeaStatus[])
-          .filter((s) => s !== "archivada")
-          .map((s) => (
-            <span key={s} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <span className={cn("size-2 rounded-full", STATUS_DOT[s])} />
-              {IDEA_STATUS_LABELS[s]}
-            </span>
-          ))}
+        {(Object.keys(STATUS_DOT) as IdeaStatus[]).map((s) => (
+          <span key={s} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className={cn("size-2 rounded-full", STATUS_DOT[s])} />
+            {IDEA_STATUS_LABELS[s]}
+          </span>
+        ))}
       </div>
 
       <div className="flex flex-wrap items-start gap-5">

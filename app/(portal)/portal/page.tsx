@@ -7,10 +7,11 @@ import { Progress } from "@/components/ui/progress";
 import { StatCard } from "@/components/shared/stat-card";
 import { FormatBadge, ChannelBadge, PhaseBadge } from "@/components/shared/badges";
 import { PieceImage } from "@/components/shared/piece-image";
+import { InfoHint } from "@/components/shared/info-hint";
 import { usePortalIdeaDialog } from "@/components/portal/idea-dialog";
 import { usePortal } from "@/lib/portal-store";
 import { formatDate } from "@/lib/dates";
-import { ideaDate } from "@/lib/stats";
+import { ideaDate, portalProgress } from "@/lib/stats";
 import { CLIENT_APPROVAL_LABELS } from "@/lib/types";
 
 export default function PortalHomePage() {
@@ -22,6 +23,8 @@ export default function PortalHomePage() {
   const approved = ideas.filter((i) => i.status === "aprobada");
   const scheduled = ideas.filter((i) => i.status === "programada");
   const published = ideas.filter((i) => i.status === "publicada");
+  const progress = portalProgress(ideas);
+  const hasContent = ideas.length > 0;
 
   return (
     <div>
@@ -48,17 +51,23 @@ export default function PortalHomePage() {
       <Card className="mt-4 gap-0 py-0">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Tu progreso con Flare
+              <InfoHint text="Se calcula con tus piezas aprobadas, programadas y publicadas sobre el total en curso. Crece a medida que tu contenido avanza." />
             </p>
             <PhaseBadge phase={client.currentPhase} />
           </div>
-          <div className="mt-3 flex items-center gap-3">
-            <Progress value={client.progressPercentage} className="flex-1" />
-            <span className="text-sm font-semibold tabular-nums">
-              {client.progressPercentage}%
-            </span>
-          </div>
+          {hasContent ? (
+            <div className="mt-3 flex items-center gap-3">
+              <Progress value={progress} className="flex-1" />
+              <span className="text-sm font-semibold tabular-nums">{progress}%</span>
+            </div>
+          ) : (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Tu equipo Flare está preparando contenido. Aquí verás tu avance en
+              cuanto haya piezas en curso.
+            </p>
+          )}
           {(client.mainGoal || client.monthlyGoal || client.contentGoal) && (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {client.mainGoal && (

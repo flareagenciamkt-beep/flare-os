@@ -68,7 +68,9 @@
   --secondary: #1a1614;
   --secondary-foreground: #F1E9E0;
   --muted: #1a1614;
-  --muted-foreground: #a39990;
+  /* Subido de #a39990 para mejorar el contraste de textos secundarios (AA),
+     dando margen también a las variantes con opacidad (/70, /80). */
+  --muted-foreground: #b0a69b;
   --accent: #1a1614;
   --accent-foreground: #F1E9E0;
   --destructive: #FF5C5C;

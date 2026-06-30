@@ -1,8 +1,12 @@
 "use client";
 
-import { Database, Flame, Palette, Users } from "lucide-react";
+import { Database, FileText, Flame, LifeBuoy, Lock, Palette, ShieldCheck, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { useRole } from "@/components/layout/role-provider";
 import { TEAM_MEMBERS } from "@/lib/types";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -16,6 +20,21 @@ const PALETTE = [
 ];
 
 export default function SettingsPage() {
+  const { can } = useRole();
+
+  if (!can("manageSettings")) {
+    return (
+      <div>
+        <PageHeader title="Ajustes" description="Configuración de Flare OS." />
+        <EmptyState
+          icon={Lock}
+          title="Acceso restringido"
+          description="Solo los administradores pueden ver y editar los ajustes de Flare OS."
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -76,7 +95,7 @@ export default function SettingsPage() {
           <CardContent className="p-4">
             <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
               <Palette className="size-4 text-flare" />
-              Paleta Flare
+              Branding · Paleta Flare
             </p>
             <div className="flex flex-wrap gap-3">
               {PALETTE.map((c) => (
@@ -89,6 +108,82 @@ export default function SettingsPage() {
                   <p className="text-[10px] text-muted-foreground">{c.value}</p>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="gap-0 py-0">
+          <CardContent className="p-4">
+            <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
+              <ShieldCheck className="size-4 text-flare" />
+              Seguridad
+            </p>
+            <ul className="space-y-2 text-xs leading-relaxed text-muted-foreground">
+              <li className="flex gap-2">
+                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-flare" />
+                Acceso por sesión de Supabase con Row Level Security: cada usuario
+                solo ve lo que su rol permite (equipo vs. cliente).
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-flare" />
+                Las contraseñas nunca se muestran en la interfaz. Al crear un acceso
+                de portal se copian al portapapeles y deben guardarse en un gestor
+                de contraseñas externo.
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-flare" />
+                Recuperación de contraseña por enlace al email desde la pantalla de
+                login.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="gap-0 py-0">
+          <CardContent className="p-4">
+            <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
+              <LifeBuoy className="size-4 text-flare" />
+              Soporte y legal
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" render={<a href="mailto:soporte@flare.agency" />}>
+                <LifeBuoy data-icon="inline-start" />
+                Contactar soporte
+              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-disabled="true"
+                      className="cursor-not-allowed opacity-60"
+                      onClick={(e) => e.preventDefault()}
+                    />
+                  }
+                >
+                  <FileText data-icon="inline-start" />
+                  Privacidad
+                </TooltipTrigger>
+                <TooltipContent>Próximamente</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-disabled="true"
+                      className="cursor-not-allowed opacity-60"
+                      onClick={(e) => e.preventDefault()}
+                    />
+                  }
+                >
+                  <FileText data-icon="inline-start" />
+                  Términos
+                </TooltipTrigger>
+                <TooltipContent>Próximamente</TooltipContent>
+              </Tooltip>
             </div>
           </CardContent>
         </Card>

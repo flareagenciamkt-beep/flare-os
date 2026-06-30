@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { LayoutGrid, Smartphone } from "lucide-react";
+import { LayoutGrid, Pencil, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ContentPreviewModal } from "@/components/shared/content-preview-modal";
 import { IdeaCard } from "./idea-card";
 import { FeedPreview } from "./feed-preview";
 import { useFlare } from "@/lib/store";
@@ -27,6 +28,7 @@ export function FeedView({
   previewLabel,
 }: FeedViewProps) {
   const [mode, setMode] = React.useState<FeedMode>(defaultMode);
+  const [preview, setPreview] = React.useState<Idea | null>(null);
   const { clientName } = useFlare();
 
   return (
@@ -63,18 +65,46 @@ export function FeedView({
       ) : mode === "cards" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {ideas.map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} onEdit={onEdit} showClient={showClient} />
+            <IdeaCard
+              key={idea.id}
+              idea={idea}
+              onEdit={onEdit}
+              onPreview={setPreview}
+              showClient={showClient}
+            />
           ))}
         </div>
       ) : (
         <FeedPreview
           ideas={ideas}
-          onEdit={onEdit}
+          onEdit={setPreview}
           groupByClient={showClient}
           singleLabel={previewLabel}
           clientName={clientName}
         />
       )}
+
+      <ContentPreviewModal
+        idea={preview}
+        onOpenChange={(o) => !o && setPreview(null)}
+        collaboration
+        clientLabel={preview && showClient ? clientName(preview.clientId) : undefined}
+        actions={
+          preview ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const current = preview;
+                setPreview(null);
+                onEdit(current);
+              }}
+            >
+              <Pencil data-icon="inline-start" />
+              Editar pieza
+            </Button>
+          ) : null
+        }
+      />
     </div>
   );
 }

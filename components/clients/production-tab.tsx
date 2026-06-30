@@ -4,7 +4,8 @@
 // (tabla, feed, kanban) reutilizando los componentes de Agencia.
 
 import * as React from "react";
-import { Kanban, LayoutGrid, Plus, Table2 } from "lucide-react";
+import { Kanban, LayoutGrid, Plus, Send, Table2, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IdeasTable } from "@/components/ideas/ideas-table";
 import { FeedView } from "@/components/ideas/feed-view";
@@ -14,8 +15,14 @@ import {
   applyIdeaFilters,
   useIdeaFilters,
 } from "@/components/ideas/idea-filters";
+import { useConfirm } from "@/components/shared/use-confirm";
+import { ImportGridDialog } from "@/components/clients/import-grid-dialog";
 import { useFlare } from "@/lib/store";
 import type { Idea } from "@/lib/types";
+
+// Piezas que se pueden "subir" a revisión del cliente (parrilla lista, aún no
+// enviada ni publicada).
+const SENDABLE_STATUSES = ["idea", "en_produccion", "en_revision_interna"] as const;
 
 type ProductionMode = "tabla" | "feed" | "kanban";
 
@@ -33,14 +40,34 @@ interface ProductionTabProps {
 }
 
 export function ProductionTab({ clientId, brand, onEdit, onNew }: ProductionTabProps) {
-  const { ideas } = useFlare();
+  const { ideas, moveIdea, getClient } = useFlare();
+  const { confirm, dialog } = useConfirm();
   const filterHook = useIdeaFilters();
   const [mode, setMode] = React.useState<ProductionMode>("tabla");
+  const [importOpen, setImportOpen] = React.useState(false);
+  const owner = getClient(clientId)?.owner ?? "";
 
-  const clientIdeas = applyIdeaFilters(
-    ideas.filter((i) => i.clientId === clientId),
-    filterHook.filters,
+  const allClientIdeas = ideas.filter((i) => i.clientId === clientId);
+  const clientIdeas = applyIdeaFilters(allClientIdeas, filterHook.filters);
+
+  // Toda la parrilla lista para enviar a aprobación del cliente.
+  const sendable = allClientIdeas.filter((i) =>
+    (SENDABLE_STATUSES as readonly string[]).includes(i.status),
   );
+
+  const sendGrid = () =>
+    confirm({
+      title: `¿Enviar ${sendable.length} pieza${sendable.length > 1 ? "s" : ""} a revisión del cliente?`,
+      description:
+        "Las piezas pasarán a “Revisión cliente” y aparecerán en el portal de la marca para que las apruebe o pida cambios.",
+      confirmLabel: "Enviar parrilla",
+      onConfirm: () => {
+        sendable.forEach((i) => moveIdea(i.id, "en_revision_cliente"));
+        toast.success(
+          `${sendable.length} pieza${sendable.length > 1 ? "s enviadas" : " enviada"} a revisión del cliente`,
+        );
+      },
+    });
 
   return (
     <div>
@@ -62,10 +89,30 @@ export function ProductionTab({ clientId, brand, onEdit, onNew }: ProductionTabP
             );
           })}
         </div>
-        <Button size="sm" onClick={onNew}>
-          <Plus data-icon="inline-start" />
-          Nueva idea
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload data-icon="inline-start" />
+            Importar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={sendable.length === 0}
+            onClick={sendGrid}
+            title={
+              sendable.length === 0
+                ? "No hay piezas listas para enviar"
+                : "Enviar la parrilla a revisión del cliente"
+            }
+          >
+            <Send data-icon="inline-start" />
+            Enviar a revisión {sendable.length > 0 && `(${sendable.length})`}
+          </Button>
+          <Button size="sm" onClick={onNew}>
+            <Plus data-icon="inline-start" />
+            Nueva idea
+          </Button>
+        </div>
       </div>
 
       <IdeaFilterBar
@@ -88,6 +135,13 @@ export function ProductionTab({ clientId, brand, onEdit, onNew }: ProductionTabP
       {mode === "kanban" && (
         <KanbanBoard ideas={clientIdeas} onEdit={onEdit} showClient={false} />
       )}
+      {dialog}
+      <ImportGridDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        clientId={clientId}
+        defaultResponsible={owner}
+      />
     </div>
   );
 }

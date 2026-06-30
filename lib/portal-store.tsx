@@ -14,6 +14,7 @@ import type {
   ClientApproval,
   ClientMetric,
   Idea,
+  IdeaComment,
   PortalClient,
 } from "./types";
 
@@ -21,11 +22,13 @@ interface PortalStore {
   client: PortalClient;
   ideas: Idea[];
   metrics: ClientMetric[];
+  comments: IdeaComment[];
   approve: (
     ideaId: string,
     decision: Exclude<ClientApproval, "pendiente">,
     feedback: string,
   ) => Promise<boolean>;
+  addComment: (ideaId: string, body: string) => Promise<void>;
 }
 
 const PortalContext = React.createContext<PortalStore | null>(null);
@@ -56,14 +59,17 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   const [client, setClient] = React.useState<PortalClient | null>(null);
   const [ideas, setIdeas] = React.useState<Idea[]>([]);
   const [metrics, setMetrics] = React.useState<ClientMetric[]>([]);
+  const [comments, setComments] = React.useState<IdeaComment[]>([]);
 
   const fetchAll = React.useCallback(async () => {
     const sb = getSupabase();
-    const [c, i, m] = await Promise.all([
+    const [c, i, m, cm] = await Promise.all([
       sb.rpc("portal_client"),
       sb.rpc("portal_ideas"),
       sb.rpc("portal_metrics"),
+      sb.rpc("portal_comments"),
     ]);
+    // portal_comments es opcional (puede no existir aún): no bloquea la carga.
     const failed = [c, i, m].find((res) => res.error);
     if (failed?.error) {
       setErrorMsg(failed.error.message);
@@ -78,6 +84,11 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     setClient(fromRow<PortalClient>(clientRow));
     setIdeas(((i.data as Record<string, unknown>[]) ?? []).map(toPortalIdea));
     setMetrics(((m.data as Record<string, unknown>[]) ?? []).map(toPortalMetric));
+    setComments(
+      ((cm.data as Record<string, unknown>[]) ?? []).map((row) =>
+        fromRow<IdeaComment>(row),
+      ),
+    );
     setStatus("ready");
   }, []);
 
@@ -93,6 +104,25 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
       client,
       ideas,
       metrics,
+      comments,
+      async addComment(ideaId, body) {
+        const text = body.trim();
+        if (!text) return;
+        const { data, error } = await getSupabase().rpc("portal_add_comment", {
+          p_idea_id: ideaId,
+          p_body: text,
+        });
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        const row = (data as Record<string, unknown>[] | null)?.[0];
+        if (row) {
+          setComments((prev) => [...prev, fromRow<IdeaComment>(row)]);
+        } else {
+          void fetchAll();
+        }
+      },
       async approve(ideaId, decision, feedback) {
         const { error } = await getSupabase().rpc("approve_idea", {
           p_idea_id: ideaId,
@@ -113,6 +143,10 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
                   clientFeedback: feedback,
                   // Aprobar avanza la pieza (igual que approve_idea en la base).
                   status: decision === "aprobada" ? "aprobada" : idea.status,
+                  // Registro de quién/cuándo aprobó (el cliente de este portal).
+                  ...(decision === "aprobada"
+                    ? { approvedBy: client.brand, approvedAt: new Date().toISOString() }
+                    : {}),
                 }
               : idea,
           ),
@@ -125,7 +159,7 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
         return true;
       },
     };
-  }, [client, ideas, metrics, fetchAll]);
+  }, [client, ideas, metrics, comments, fetchAll]);
 
   if (status === "loading") return <Splash label="Cargando tu contenido..." />;
 
