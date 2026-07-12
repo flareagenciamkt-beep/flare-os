@@ -5,6 +5,7 @@ import { writeFileSync } from "node:fs";
 import {
   MOCK_ACCESS,
   MOCK_BILLING,
+  MOCK_CONNECTED_ACCOUNTS,
   MOCK_CLIENT_NOTES,
   MOCK_CLIENTS,
   MOCK_IDEAS,
@@ -71,6 +72,7 @@ const sql = [
   insertStatement("client_strategy", MOCK_STRATEGIES as unknown as Row[]),
   insertStatement("client_notes", MOCK_CLIENT_NOTES as unknown as Row[]),
   insertStatement("client_access", MOCK_ACCESS as unknown as Row[]),
+  insertStatement("connected_accounts", MOCK_CONNECTED_ACCOUNTS as unknown as Row[]),
   insertStatement("client_meetings", MOCK_MEETINGS as unknown as Row[]),
   insertStatement("client_billing", MOCK_BILLING as unknown as Row[]),
 ].join("\n");

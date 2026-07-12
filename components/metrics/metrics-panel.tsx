@@ -41,7 +41,11 @@ import { CHART_COLORS, StackedBarChart, TrendChart } from "@/components/shared/c
 import { MetricFormDialog } from "@/components/forms/metric-form";
 import { useFlare } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { MONTH_LABELS, type ClientMetric } from "@/lib/types";
+import {
+  CONNECTED_PROVIDER_LABELS,
+  MONTH_LABELS,
+  type ClientMetric,
+} from "@/lib/types";
 
 const fmt = new Intl.NumberFormat("es-CO");
 
@@ -405,7 +409,7 @@ export function MetricsDisplay(props: MetricsDisplayProps) {
 
 // Panel interno (equipo): MetricsDisplay + registro/edición vía store.
 export function MetricsPanel({ clientId }: { clientId: string }) {
-  const { metrics, deleteMetric } = useFlare();
+  const { metrics, deleteMetric, connectedAccounts } = useFlare();
   const { confirm, dialog } = useConfirm();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ClientMetric | null>(null);
@@ -414,15 +418,37 @@ export function MetricsPanel({ clientId }: { clientId: string }) {
   const sorted = [...clientMetrics].sort(
     (a, b) => b.periodYear - a.periodYear || b.periodMonth - a.periodMonth,
   );
+  const accounts = connectedAccounts.filter((a) => a.clientId === clientId);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">
-          {sorted[0]
-            ? `Último registro: ${periodLabel(sorted[0])}`
-            : "Sin métricas registradas"}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium text-muted-foreground">
+            {sorted[0]
+              ? `Último registro: ${periodLabel(sorted[0])}`
+              : "Sin métricas registradas"}
+          </p>
+          {accounts.map((a) => (
+            <span
+              key={a.id}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[11px] text-muted-foreground"
+              title={`${CONNECTED_PROVIDER_LABELS[a.provider]} · ${a.handle}`}
+            >
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  a.status === "conectada"
+                    ? "bg-emerald-400"
+                    : a.status === "error" || a.status === "expirada"
+                      ? "bg-amber-400"
+                      : "bg-zinc-400",
+                )}
+              />
+              {a.handle}
+            </span>
+          ))}
+        </div>
         <Button
           size="sm"
           onClick={() => {

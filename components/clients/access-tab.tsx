@@ -32,6 +32,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { useConfirm } from "@/components/shared/use-confirm";
 import { AccessFormDialog } from "@/components/forms/access-form";
+import { ConnectedAccountsSection } from "@/components/clients/connected-accounts-section";
 import { useFlare } from "@/lib/store";
 import {
   ACCESS_STATUS_LABELS,
@@ -62,7 +63,9 @@ export function AccessTab({ clientId }: { clientId: string }) {
   };
 
   return (
-    <div>
+    <div className="space-y-6">
+      <ConnectedAccountsSection clientId={clientId} />
+
       <div className="mb-4 flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <ShieldAlert className="size-3.5 text-amber-400" />

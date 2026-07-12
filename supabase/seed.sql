@@ -78,6 +78,11 @@ insert into public.client_access ("id", "client_id", "platform", "username_or_em
   ('a-2', 'c-universal', 'Meta Ads', 'ads@universalsolutions.com', 'https://business.facebook.com', 'recibido', 'Laura', true, 'Falta validar permisos de administrador de pauta.', '2026-02-01', '2026-05-28'),
   ('a-3', 'c-autozone', 'Instagram', 'autozone', 'https://instagram.com/autozone', 'pendiente', 'Sara', false, 'Solicitado por WhatsApp el 5 de junio.', '2026-06-05', '2026-06-05');
 
+insert into public.connected_accounts ("id", "client_id", "provider", "handle", "url", "external_id", "status", "sync_enabled", "connected_at", "last_sync_at", "notes", "created_at", "updated_at") values
+  ('ca-1', 'c-universal', 'instagram', '@universalsolutions', 'https://instagram.com/universalsolutions', '', 'asociada', false, null, null, 'Cuenta principal de la marca; las métricas mensuales salen de aquí.', '2026-06-10', '2026-06-10'),
+  ('ca-2', 'c-universal', 'meta_ads', 'Universal Solutions — Ad Account', 'https://business.facebook.com', '', 'asociada', false, null, null, 'Cuenta publicitaria (pauta e inversión).', '2026-06-10', '2026-06-10'),
+  ('ca-3', 'c-autozone', 'instagram', '@autozone', 'https://instagram.com/autozone', '', 'asociada', false, null, null, '', '2026-06-12', '2026-06-12');
+
 insert into public.client_meetings ("id", "client_id", "meeting_date", "type", "participants", "topics", "decisions", "pending_items", "next_meeting_date", "created_at", "updated_at") values
   ('mt-1', 'c-universal', '2026-06-02', 'Revisión mensual', 'Juan, Sara, María (cliente)', 'Resultados de mayo, calendario de junio, campaña open enrollment.', 'Aprobado aumento de 2 reels mensuales. Testimonios reales en junio.', 'Cliente envía lista de clientes para testimonios.', '2026-07-01', '2026-06-02', '2026-06-02'),
   ('mt-2', 'c-ochopilates', '2026-06-12', 'Cierre de propuesta', 'Juan, Camila (dueña)', 'Alcance del servicio, fee mensual, fecha de arranque.', '', 'Enviar contrato si se aprueba el alcance.', null, '2026-06-09', '2026-06-09');

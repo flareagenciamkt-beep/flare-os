@@ -18,6 +18,7 @@ import {
   MOCK_CLIENT_NOTES,
   MOCK_CLIENTS,
   MOCK_COMMENTS,
+  MOCK_CONNECTED_ACCOUNTS,
   MOCK_IDEAS,
   MOCK_MEETINGS,
   MOCK_METRICS,
@@ -36,6 +37,7 @@ import type {
   ClientNote,
   ClientStrategy,
   CommentAuthorRole,
+  ConnectedAccount,
   Idea,
   IdeaComment,
   IdeaStatus,
@@ -123,6 +125,14 @@ interface FlareStore {
   addAccess: (data: Omit<ClientAccess, keyof WithMeta>) => ClientAccess;
   updateAccess: (id: string, data: Partial<ClientAccess>) => void;
   deleteAccess: (id: string) => void;
+
+  // Cuentas conectadas para analytics (V1.4)
+  connectedAccounts: ConnectedAccount[];
+  addConnectedAccount: (
+    data: Omit<ConnectedAccount, keyof WithMeta>,
+  ) => ConnectedAccount;
+  updateConnectedAccount: (id: string, data: Partial<ConnectedAccount>) => void;
+  deleteConnectedAccount: (id: string) => void;
 
   meetings: ClientMeeting[];
   addMeeting: (data: Omit<ClientMeeting, keyof WithMeta>) => ClientMeeting;
@@ -222,6 +232,9 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   const [accesses, setAccesses] = React.useState<ClientAccess[]>(
     configured ? [] : MOCK_ACCESS,
   );
+  const [connectedAccounts, setConnectedAccounts] = React.useState<ConnectedAccount[]>(
+    configured ? [] : MOCK_CONNECTED_ACCOUNTS,
+  );
   const [meetings, setMeetings] = React.useState<ClientMeeting[]>(
     configured ? [] : MOCK_MEETINGS,
   );
@@ -240,7 +253,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   // reintentos lo fijan antes de llamar (evita setState síncrono en efectos).
   const fetchAll = React.useCallback(async () => {
     const sb = getSupabase();
-    const [c, i, t, r, p, pr, m, st, cn, ac, mt, bi, cm] = await Promise.all([
+    const [c, i, t, r, p, pr, m, st, cn, ac, ca, mt, bi, cm] = await Promise.all([
       sb.from("clients").select("*").order("created_at"),
       sb.from("ideas").select("*").order("created_at", { ascending: false }),
       sb.from("tasks").select("*").order("created_at", { ascending: false }),
@@ -251,11 +264,14 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       sb.from("client_strategy").select("*"),
       sb.from("client_notes").select("*").order("created_at", { ascending: false }),
       sb.from("client_access").select("*").order("created_at", { ascending: false }),
+      sb.from("connected_accounts").select("*").order("created_at", { ascending: false }),
       sb.from("client_meetings").select("*").order("meeting_date", { ascending: false }),
       sb.from("client_billing").select("*").order("created_at", { ascending: false }),
       sb.from("idea_comments").select("*").order("created_at", { ascending: true }),
     ]);
-    const failed = [c, i, t, r, p, pr, m, st, cn, ac, mt, bi, cm].find((res) => res.error);
+    const failed = [c, i, t, r, p, pr, m, st, cn, ac, ca, mt, bi, cm].find(
+      (res) => res.error,
+    );
     if (failed?.error) {
       if (failed.error.code === "PGRST205") {
         setStatus("missing-schema");
@@ -275,6 +291,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     setStrategies((st.data ?? []).map((row) => fromRow<ClientStrategy>(row)));
     setClientNotes((cn.data ?? []).map((row) => fromRow<ClientNote>(row)));
     setAccesses((ac.data ?? []).map((row) => fromRow<ClientAccess>(row)));
+    setConnectedAccounts((ca.data ?? []).map((row) => fromRow<ConnectedAccount>(row)));
     setMeetings((mt.data ?? []).map((row) => fromRow<ClientMeeting>(row)));
     setBilling((bi.data ?? []).map((row) => fromRow<ClientBilling>(row)));
     setComments((cm.data ?? []).map((row) => fromRow<IdeaComment>(row)));
@@ -345,6 +362,10 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     const strategyCrud = makeCrud<ClientStrategy>("client_strategy", setStrategies);
     const noteCrud = makeCrud<ClientNote>("client_notes", setClientNotes);
     const accessCrud = makeCrud<ClientAccess>("client_access", setAccesses);
+    const connectedAccountCrud = makeCrud<ConnectedAccount>(
+      "connected_accounts",
+      setConnectedAccounts,
+    );
     const meetingCrud = makeCrud<ClientMeeting>("client_meetings", setMeetings);
     const billingCrud = makeCrud<ClientBilling>("client_billing", setBilling);
     const commentCrud = makeCrud<IdeaComment>("idea_comments", setComments);
@@ -432,6 +453,11 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       updateAccess: accessCrud.update,
       deleteAccess: accessCrud.remove,
 
+      connectedAccounts,
+      addConnectedAccount: connectedAccountCrud.add,
+      updateConnectedAccount: connectedAccountCrud.update,
+      deleteConnectedAccount: connectedAccountCrud.remove,
+
       meetings,
       addMeeting: meetingCrud.add,
       updateMeeting: meetingCrud.update,
@@ -461,6 +487,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     strategies,
     clientNotes,
     accesses,
+    connectedAccounts,
     meetings,
     billing,
     comments,

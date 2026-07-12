@@ -148,6 +148,47 @@ export interface ClientAccess {
   updatedAt: string;
 }
 
+// ─── Cuentas conectadas para analytics (V1.4) ────────────────────────────────
+// Asocia cuentas de plataformas (Instagram, TikTok…) a un cliente para atribuir
+// sus métricas. Distinto de ClientAccess (checklist de accesos): esto identifica
+// LA cuenta medida. La conexión OAuth es opcional: sin credenciales de la
+// plataforma la cuenta queda "asociada" en modo manual y las métricas se siguen
+// registrando a mano. Los tokens OAuth nunca viven en este tipo: van en la tabla
+// connected_account_tokens, solo accesible desde el servidor.
+
+export type ConnectedProvider =
+  | "instagram"
+  | "facebook"
+  | "tiktok"
+  | "youtube"
+  | "linkedin"
+  | "meta_ads"
+  | "google_analytics"
+  | "otro";
+
+export type ConnectedAccountStatus =
+  | "asociada" // registrada manualmente, sin conexión API
+  | "conectada" // OAuth activo, lista para sync
+  | "expirada" // token vencido: requiere reconexión
+  | "error" // el último sync falló
+  | "desconectada"; // desvinculada de la API (sigue asociada al cliente)
+
+export interface ConnectedAccount {
+  id: string;
+  clientId: string;
+  provider: ConnectedProvider;
+  handle: string; // @usuario o nombre de la cuenta en la plataforma
+  url: string;
+  externalId: string; // id de la cuenta en la plataforma (lo llena el OAuth)
+  status: ConnectedAccountStatus;
+  syncEnabled: boolean;
+  connectedAt: string | null;
+  lastSyncAt: string | null;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ClientMeeting {
   id: string;
   clientId: string;
@@ -609,6 +650,25 @@ export const ACCESS_STATUS_LABELS: Record<AccessStatus, string> = {
   recibido: "Recibido",
   validado: "Validado",
   problema: "Problema",
+};
+
+export const CONNECTED_PROVIDER_LABELS: Record<ConnectedProvider, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  meta_ads: "Meta Ads",
+  google_analytics: "Google Analytics",
+  otro: "Otra",
+};
+
+export const CONNECTED_ACCOUNT_STATUS_LABELS: Record<ConnectedAccountStatus, string> = {
+  asociada: "Asociada (manual)",
+  conectada: "Conectada",
+  expirada: "Token expirado",
+  error: "Error de sync",
+  desconectada: "Desconectada",
 };
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {

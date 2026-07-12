@@ -114,6 +114,26 @@ export const accessSchema = z.object({
 
 export type AccessFormValues = z.infer<typeof accessSchema>;
 
+// Asociación manual de una cuenta de analytics. El estado, la conexión OAuth y
+// los campos de sync los gestiona el sistema, no el formulario.
+export const connectedAccountSchema = z.object({
+  provider: z.enum([
+    "instagram",
+    "facebook",
+    "tiktok",
+    "youtube",
+    "linkedin",
+    "meta_ads",
+    "google_analytics",
+    "otro",
+  ]),
+  handle: z.string().min(1, "El usuario o nombre de la cuenta es obligatorio"),
+  url: z.string(),
+  notes: z.string(),
+});
+
+export type ConnectedAccountFormValues = z.infer<typeof connectedAccountSchema>;
+
 export const meetingSchema = z.object({
   meetingDate: z.string().min(1, "La fecha es obligatoria"),
   type: z.string(),

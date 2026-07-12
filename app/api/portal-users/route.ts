@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     .select("role")
     .eq("id", callerData.user.id)
     .single();
-  if (callerProfile?.role !== "team") {
+  if (callerProfile?.role !== "team" && callerProfile?.role !== "admin") {
     return Response.json(
       { error: "Solo el equipo Flare puede crear usuarios del portal." },
       { status: 403 },
