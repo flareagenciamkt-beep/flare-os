@@ -1,8 +1,12 @@
 // Utilidades compartidas del flujo OAuth de Meta (Instagram/Facebook/Meta Ads).
-// Este archivo no es una ruta: solo lo importan connect/ y callback/.
-// Credenciales: META_APP_ID y META_APP_SECRET en .env.local (solo servidor).
+// Este archivo no es una ruta: solo lo importan las rutas de integrations/.
+//
+// Credenciales de Meta: el admin las pega en Ajustes (tabla server-only
+// integration_settings) o, como fallback, META_APP_ID/META_APP_SECRET en env.
+// El único secreto que sí exige env es SUPABASE_SECRET_KEY (bootstrap).
 
 import { createHmac, timingSafeEqual } from "node:crypto";
+import type { NextRequest } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Versión estable del Graph API; las versiones viven años tras su reemplazo.
@@ -18,10 +22,8 @@ export const META_SCOPES = [
   "business_management",
 ].join(",");
 
-export function getMetaEnv() {
+export function getServerEnv() {
   return {
-    appId: process.env.META_APP_ID,
-    appSecret: process.env.META_APP_SECRET,
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
     secretKey: process.env.SUPABASE_SECRET_KEY,
   };
@@ -33,11 +35,59 @@ export function getAdmin(supabaseUrl: string, secretKey: string): SupabaseClient
   });
 }
 
-// El callback llega por redirect del navegador (sin Authorization), así que el
-// state viaja firmado: `accountId.hmac(accountId)` con el app secret de Meta.
-export function signState(accountId: string, appSecret: string): string {
-  const sig = createHmac("sha256", appSecret).update(accountId).digest("hex");
-  return `${accountId}.${sig}`;
+export interface MetaConfig {
+  appId: string;
+  appSecret: string;
+  source: "db" | "env";
+}
+
+// Primero lo configurado desde Ajustes (base), luego variables de entorno.
+export async function getMetaConfig(admin: SupabaseClient): Promise<MetaConfig | null> {
+  const { data } = await admin
+    .from("integration_settings")
+    .select("settings")
+    .eq("id", "meta")
+    .maybeSingle();
+  const s = (data?.settings ?? {}) as { appId?: string; appSecret?: string };
+  if (s.appId && s.appSecret) {
+    return { appId: s.appId, appSecret: s.appSecret, source: "db" };
+  }
+  if (process.env.META_APP_ID && process.env.META_APP_SECRET) {
+    return {
+      appId: process.env.META_APP_ID,
+      appSecret: process.env.META_APP_SECRET,
+      source: "env",
+    };
+  }
+  return null;
+}
+
+// Autentica al caller por su JWT de Supabase y exige uno de los roles dados.
+export async function requireRole(
+  admin: SupabaseClient,
+  request: NextRequest,
+  roles: string[],
+): Promise<{ ok: true; userId: string } | { ok: false; res: Response }> {
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!token) {
+    return { ok: false, res: Response.json({ error: "Sesión no válida." }, { status: 401 }) };
+  }
+  const { data, error } = await admin.auth.getUser(token);
+  if (error || !data.user) {
+    return { ok: false, res: Response.json({ error: "Sesión no válida." }, { status: 401 }) };
+  }
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single();
+  if (!profile?.role || !roles.includes(profile.role)) {
+    return {
+      ok: false,
+      res: Response.json({ error: "No tienes permisos para esta acción." }, { status: 403 }),
+    };
+  }
+  return { ok: true, userId: data.user.id };
 }
 
 // Descubre la cuenta real detrás del token para no pedirle nada al usuario:
@@ -82,6 +132,13 @@ export async function discoverAccount(
   } catch {
     return null;
   }
+}
+
+// El callback llega por redirect del navegador (sin Authorization), así que el
+// state viaja firmado: `accountId.hmac(accountId)` con el app secret de Meta.
+export function signState(accountId: string, appSecret: string): string {
+  const sig = createHmac("sha256", appSecret).update(accountId).digest("hex");
+  return `${accountId}.${sig}`;
 }
 
 export function verifyState(state: string, appSecret: string): string | null {

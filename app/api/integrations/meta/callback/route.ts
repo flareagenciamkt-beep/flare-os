@@ -4,13 +4,26 @@
 // state firmado que emitió /connect.
 
 import type { NextRequest } from "next/server";
-import { discoverAccount, getAdmin, getMetaEnv, GRAPH_VERSION, verifyState } from "../shared";
+import {
+  discoverAccount,
+  getAdmin,
+  getMetaConfig,
+  getServerEnv,
+  GRAPH_VERSION,
+  verifyState,
+} from "../shared";
 
 export async function GET(request: NextRequest) {
-  const { appId, appSecret, supabaseUrl, secretKey } = getMetaEnv();
-  if (!appId || !appSecret || !supabaseUrl || !secretKey) {
+  const { supabaseUrl, secretKey } = getServerEnv();
+  if (!supabaseUrl || !secretKey) {
     return Response.json({ error: "Integración de Meta no configurada." }, { status: 501 });
   }
+  const admin = getAdmin(supabaseUrl, secretKey);
+  const config = await getMetaConfig(admin);
+  if (!config) {
+    return Response.json({ error: "Integración de Meta no configurada." }, { status: 501 });
+  }
+  const { appId, appSecret } = config;
 
   const params = request.nextUrl.searchParams;
   const state = params.get("state") ?? "";
@@ -18,8 +31,6 @@ export async function GET(request: NextRequest) {
   if (!accountId) {
     return Response.json({ error: "State inválido." }, { status: 400 });
   }
-
-  const admin = getAdmin(supabaseUrl, secretKey);
   const { data: account } = await admin
     .from("connected_accounts")
     .select("id, client_id, provider, handle")

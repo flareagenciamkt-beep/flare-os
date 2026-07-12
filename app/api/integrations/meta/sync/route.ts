@@ -5,7 +5,7 @@
 
 import type { NextRequest } from "next/server";
 import { z } from "zod";
-import { getAdmin, getMetaEnv, GRAPH_VERSION } from "../shared";
+import { getAdmin, getMetaConfig, getServerEnv, GRAPH_VERSION, requireRole } from "../shared";
 
 const bodySchema = z.object({ accountId: z.string().min(1) });
 
@@ -58,29 +58,24 @@ async function fetchPublished(igId: string, token: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const { appId, appSecret, supabaseUrl, secretKey } = getMetaEnv();
-  if (!appId || !appSecret || !supabaseUrl || !secretKey) {
+  const { supabaseUrl, secretKey } = getServerEnv();
+  if (!supabaseUrl || !secretKey) {
     return Response.json(
-      { error: "Integración de Meta no configurada (META_APP_ID/META_APP_SECRET en .env.local)." },
+      { error: "Falta SUPABASE_SECRET_KEY en el servidor." },
       { status: 501 },
     );
   }
 
-  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token) return Response.json({ error: "Sesión no válida." }, { status: 401 });
-
   const admin = getAdmin(supabaseUrl, secretKey);
-  const { data: callerData, error: callerError } = await admin.auth.getUser(token);
-  if (callerError || !callerData.user) {
-    return Response.json({ error: "Sesión no válida." }, { status: 401 });
-  }
-  const { data: callerProfile } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", callerData.user.id)
-    .single();
-  if (callerProfile?.role !== "team" && callerProfile?.role !== "admin") {
-    return Response.json({ error: "Solo el equipo Flare puede sincronizar." }, { status: 403 });
+  const auth = await requireRole(admin, request, ["admin", "team"]);
+  if (!auth.ok) return auth.res;
+
+  const config = await getMetaConfig(admin);
+  if (!config) {
+    return Response.json(
+      { error: "La integración de Meta no está configurada (Ajustes → Integraciones)." },
+      { status: 501 },
+    );
   }
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
