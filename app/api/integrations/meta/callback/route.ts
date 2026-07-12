@@ -4,7 +4,7 @@
 // state firmado que emitió /connect.
 
 import type { NextRequest } from "next/server";
-import { getAdmin, getMetaEnv, GRAPH_VERSION, verifyState } from "../shared";
+import { discoverAccount, getAdmin, getMetaEnv, GRAPH_VERSION, verifyState } from "../shared";
 
 export async function GET(request: NextRequest) {
   const { appId, appSecret, supabaseUrl, secretKey } = getMetaEnv();
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const admin = getAdmin(supabaseUrl, secretKey);
   const { data: account } = await admin
     .from("connected_accounts")
-    .select("id, client_id")
+    .select("id, client_id, provider, handle")
     .eq("id", accountId)
     .single();
   if (!account) {
@@ -96,6 +96,10 @@ export async function GET(request: NextRequest) {
       return Response.redirect(backToClient, 302);
     }
 
+    // Autocompletar la identidad real de la cuenta (id externo y @usuario)
+    // para que el usuario no tenga que llenar nada a mano.
+    const discovered = await discoverAccount(accessToken, account.provider);
+
     await admin
       .from("connected_accounts")
       .update({
@@ -103,6 +107,14 @@ export async function GET(request: NextRequest) {
         sync_enabled: true,
         connected_at: new Date().toISOString(),
         updated_at: new Date().toISOString().slice(0, 10),
+        ...(discovered
+          ? {
+              external_id: discovered.externalId,
+              ...(discovered.handle && !account.handle?.startsWith("@")
+                ? { handle: discovered.handle }
+                : {}),
+            }
+          : {}),
       })
       .eq("id", accountId);
   } catch (err) {

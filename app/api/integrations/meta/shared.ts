@@ -40,6 +40,50 @@ export function signState(accountId: string, appSecret: string): string {
   return `${accountId}.${sig}`;
 }
 
+// Descubre la cuenta real detrás del token para no pedirle nada al usuario:
+// páginas de FB (con su IG business vinculado) o cuentas publicitarias.
+export async function discoverAccount(
+  accessToken: string,
+  provider: string,
+): Promise<{ externalId: string; handle: string } | null> {
+  try {
+    if (provider === "meta_ads") {
+      const res = await fetch(
+        `https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts?fields=name,account_id&access_token=${encodeURIComponent(accessToken)}`,
+      );
+      const json = (await res.json()) as {
+        data?: { account_id?: string; name?: string }[];
+      };
+      const ad = json.data?.[0];
+      if (!ad?.account_id) return null;
+      return { externalId: ad.account_id, handle: ad.name ?? "" };
+    }
+
+    const res = await fetch(
+      `https://graph.facebook.com/${GRAPH_VERSION}/me/accounts?fields=id,name,instagram_business_account{id,username}&access_token=${encodeURIComponent(accessToken)}`,
+    );
+    const json = (await res.json()) as {
+      data?: {
+        id: string;
+        name?: string;
+        instagram_business_account?: { id: string; username?: string };
+      }[];
+    };
+    const pages = json.data ?? [];
+    if (provider === "instagram") {
+      const page = pages.find((p) => p.instagram_business_account);
+      const ig = page?.instagram_business_account;
+      if (!ig) return null;
+      return { externalId: ig.id, handle: ig.username ? `@${ig.username}` : "" };
+    }
+    const page = pages[0];
+    if (!page) return null;
+    return { externalId: page.id, handle: page.name ?? "" };
+  } catch {
+    return null;
+  }
+}
+
 export function verifyState(state: string, appSecret: string): string | null {
   const dot = state.lastIndexOf(".");
   if (dot <= 0) return null;

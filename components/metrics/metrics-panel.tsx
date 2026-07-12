@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Minus,
   MoreHorizontal,
+  RefreshCw,
   Sparkles,
   Trash2,
   Users,
@@ -35,6 +36,7 @@ import { StatCard, type StatTrend } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useConfirm } from "@/components/shared/use-confirm";
 import { CHART_COLORS, StackedBarChart, TrendChart } from "@/components/shared/charts";
+import { syncConnectedAccount } from "@/lib/integrations";
 import { useFlare } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
@@ -401,14 +403,34 @@ export function MetricsDisplay(props: MetricsDisplayProps) {
 // por el sync de las cuentas de analytics conectadas; aquí solo se consultan
 // (y se pueden eliminar registros erróneos).
 export function MetricsPanel({ clientId }: { clientId: string }) {
-  const { metrics, deleteMetric, connectedAccounts } = useFlare();
+  const { metrics, deleteMetric, connectedAccounts, refresh } = useFlare();
   const { confirm, dialog } = useConfirm();
+  const [syncing, setSyncing] = React.useState(false);
 
   const clientMetrics = metrics.filter((m) => m.clientId === clientId);
   const sorted = [...clientMetrics].sort(
     (a, b) => b.periodYear - a.periodYear || b.periodMonth - a.periodMonth,
   );
   const accounts = connectedAccounts.filter((a) => a.clientId === clientId);
+  const syncable = accounts.filter((a) => a.status === "conectada");
+
+  const syncAll = async () => {
+    setSyncing(true);
+    try {
+      const results = await Promise.all(
+        syncable.map((a) => syncConnectedAccount(a.id)),
+      );
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length) {
+        toast.error(failed[0].error ?? "No se pudo sincronizar.");
+      } else {
+        toast.success("Métricas sincronizadas");
+      }
+      await refresh();
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -439,6 +461,12 @@ export function MetricsPanel({ clientId }: { clientId: string }) {
             </span>
           ))}
         </div>
+        {syncable.length > 0 && (
+          <Button size="sm" variant="outline" disabled={syncing} onClick={() => void syncAll()}>
+            <RefreshCw data-icon="inline-start" className={cn(syncing && "animate-spin")} />
+            {syncing ? "Sincronizando..." : "Sincronizar"}
+          </Button>
+        )}
       </div>
 
       <MetricsDisplay

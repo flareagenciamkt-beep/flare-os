@@ -18,6 +18,7 @@ import {
   Pencil,
   Plug,
   Plus,
+  RefreshCw,
   SquarePlay,
   ThumbsUp,
   Trash2,
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useConfirm } from "@/components/shared/use-confirm";
 import { ConnectedAccountFormDialog } from "@/components/forms/connected-account-form";
+import { syncConnectedAccount } from "@/lib/integrations";
 import { useFlare } from "@/lib/store";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
@@ -69,14 +71,68 @@ const STATUS_STYLES: Record<ConnectedAccountStatus, string> = {
 // Proveedores cuya conexión pasa por el OAuth de Meta.
 const META_PROVIDERS: ConnectedProvider[] = ["instagram", "facebook", "meta_ads"];
 
+// Adivina el proveedor a partir del texto libre de "plataforma" en Accesos,
+// para sugerir la asociación con un clic.
+function providerFromPlatform(platform: string): ConnectedProvider | null {
+  const p = platform.toLowerCase();
+  if (/meta ads|facebook ads|business|pauta/.test(p)) return "meta_ads";
+  if (/instagram|\big\b/.test(p)) return "instagram";
+  if (/facebook|\bfb\b/.test(p)) return "facebook";
+  if (/tiktok/.test(p)) return "tiktok";
+  if (/youtube/.test(p)) return "youtube";
+  if (/linkedin/.test(p)) return "linkedin";
+  if (/google analytics|ga4/.test(p)) return "google_analytics";
+  return null;
+}
+
 export function ConnectedAccountsSection({ clientId }: { clientId: string }) {
-  const { connectedAccounts, deleteConnectedAccount } = useFlare();
+  const { connectedAccounts, deleteConnectedAccount, addConnectedAccount, accesses, refresh } =
+    useFlare();
   const { confirm, dialog } = useConfirm();
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ConnectedAccount | null>(null);
   const [connecting, setConnecting] = React.useState<string | null>(null);
+  const [syncing, setSyncing] = React.useState<string | null>(null);
 
   const accounts = connectedAccounts.filter((a) => a.clientId === clientId);
+
+  // Sugerencias: accesos del cliente que parecen cuentas medibles y cuyo
+  // proveedor aún no está asociado.
+  const suggestions = accesses
+    .filter((ac) => ac.clientId === clientId)
+    .map((ac) => ({ access: ac, provider: providerFromPlatform(ac.platform) }))
+    .filter(
+      (s): s is { access: (typeof accesses)[number]; provider: ConnectedProvider } =>
+        s.provider !== null && !accounts.some((a) => a.provider === s.provider),
+    );
+
+  const associateSuggestion = (s: (typeof suggestions)[number]) => {
+    addConnectedAccount({
+      clientId,
+      provider: s.provider,
+      handle: s.access.usernameOrEmail || s.access.platform,
+      url: s.access.url,
+      externalId: "",
+      status: "asociada",
+      syncEnabled: false,
+      connectedAt: null,
+      lastSyncAt: null,
+      notes: "Asociada desde el registro de accesos.",
+    });
+    toast.success(`Cuenta de ${CONNECTED_PROVIDER_LABELS[s.provider]} asociada`);
+  };
+
+  const syncNow = async (account: ConnectedAccount) => {
+    setSyncing(account.id);
+    try {
+      const result = await syncConnectedAccount(account.id);
+      if (result.ok) toast.success("Métricas sincronizadas");
+      else toast.error(result.error ?? "No se pudo sincronizar.");
+      await refresh();
+    } finally {
+      setSyncing(null);
+    }
+  };
 
   const openForm = (account: ConnectedAccount | null) => {
     setEditing(account);
@@ -195,6 +251,18 @@ export function ConnectedAccountsSection({ clientId }: { clientId: string }) {
                           <DropdownMenuSeparator />
                         </>
                       )}
+                      {a.status === "conectada" && (
+                        <>
+                          <DropdownMenuItem
+                            disabled={syncing === a.id}
+                            onClick={() => void syncNow(a)}
+                          >
+                            <RefreshCw />
+                            {syncing === a.id ? "Sincronizando..." : "Sincronizar ahora"}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
                       <DropdownMenuItem onClick={() => openForm(a)}>
                         <Pencil /> Editar
                       </DropdownMenuItem>
@@ -228,6 +296,26 @@ export function ConnectedAccountsSection({ clientId }: { clientId: string }) {
             <LineChart className="size-4 shrink-0" />
             Sin cuentas asociadas. Asocia la cuenta de Instagram (u otra plataforma)
             que se mide para este cliente.
+          </div>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground">
+              Detectadas en Accesos:
+            </span>
+            {suggestions.map((s) => (
+              <button
+                key={s.access.id}
+                type="button"
+                onClick={() => associateSuggestion(s)}
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-flare/40 hover:text-foreground"
+              >
+                <Plus className="size-3" />
+                {CONNECTED_PROVIDER_LABELS[s.provider]}
+                {s.access.usernameOrEmail ? ` · ${s.access.usernameOrEmail}` : ""}
+              </button>
+            ))}
           </div>
         )}
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { IntegrationsCard } from "@/components/settings/integrations-card";
 import { useRole } from "@/components/layout/role-provider";
 import { TEAM_MEMBERS } from "@/lib/types";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -90,6 +91,8 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+
+        <IntegrationsCard />
 
         <Card className="gap-0 py-0">
           <CardContent className="p-4">

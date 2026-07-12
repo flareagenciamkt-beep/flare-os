@@ -146,6 +146,8 @@ interface FlareStore {
 
   getClient: (id: string) => Client | undefined;
   clientName: (clientId: string | null) => string;
+  // Re-lee todo desde Supabase (p.ej. tras un sync server-side). No-op en demo.
+  refresh: () => Promise<void>;
 }
 
 const FlareContext = React.createContext<FlareStore | null>(null);
@@ -466,6 +468,9 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       updateBilling: billingCrud.update,
       deleteBilling: billingCrud.remove,
 
+      refresh: async () => {
+        if (configured) await fetchAll();
+      },
       getClient: (id) => clients.find((c) => c.id === id),
       clientName: (clientId) =>
         clientId
