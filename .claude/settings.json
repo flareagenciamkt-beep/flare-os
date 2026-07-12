@@ -4,5 +4,18 @@
       "Bash(curl -s -o /dev/null -w \"login: %{http_code}\\\\n\" http://localhost:3000/login)",
       "Read(//private/tmp/**)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/vault-reminder.sh\"",
+            "statusMessage": "Cargando recordatorio del vault de Obsidian"
+          }
+        ]
+      }
+    ]
   }
 }

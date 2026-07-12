@@ -48,3 +48,10 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 /shots/
+
+# Obsidian de la raíz del repo (estado local del editor; el vault versionado
+# en "flare vault/" sí incluye su propio .obsidian)
+/.obsidian/
+
+# caché local del CLI de Supabase
+/supabase/.temp/
