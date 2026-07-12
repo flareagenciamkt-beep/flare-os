@@ -10,8 +10,6 @@ import {
   MessageCircle,
   Minus,
   MoreHorizontal,
-  Pencil,
-  Plus,
   Sparkles,
   Trash2,
   Users,
@@ -31,14 +29,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatCard, type StatTrend } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useConfirm } from "@/components/shared/use-confirm";
 import { CHART_COLORS, StackedBarChart, TrendChart } from "@/components/shared/charts";
-import { MetricFormDialog } from "@/components/forms/metric-form";
 import { useFlare } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
@@ -67,7 +63,6 @@ export function periodLabel(m: ClientMetric) {
 interface MetricsDisplayProps {
   metrics: ClientMetric[]; // ya filtradas por cliente
   readOnly?: boolean;
-  onEdit?: (metric: ClientMetric) => void;
   onDelete?: (metric: ClientMetric) => void;
 }
 
@@ -290,7 +285,6 @@ export function MetricsCharts({ metrics }: { metrics: ClientMetric[] }) {
 export function MetricsTable({
   metrics,
   readOnly = false,
-  onEdit,
   onDelete,
 }: MetricsDisplayProps) {
   const sorted = [...metrics].sort(
@@ -365,10 +359,6 @@ export function MetricsTable({
                         <MoreHorizontal />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={() => onEdit?.(m)}>
-                          <Pencil /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                           variant="destructive"
                           onClick={() => onDelete?.(m)}
@@ -393,8 +383,8 @@ export function MetricsDisplay(props: MetricsDisplayProps) {
     return (
       <EmptyState
         icon={LineChart}
-        title="Sin métricas registradas"
-        description="Cuando haya registros mensuales aparecerán aquí."
+        title="Sin métricas todavía"
+        description="Asocia y conecta las cuentas de analytics del cliente (tab Accesos) para alimentar sus métricas."
       />
     );
   }
@@ -407,12 +397,12 @@ export function MetricsDisplay(props: MetricsDisplayProps) {
   );
 }
 
-// Panel interno (equipo): MetricsDisplay + registro/edición vía store.
+// Panel interno (equipo). El registro manual se retiró: las métricas entran
+// por el sync de las cuentas de analytics conectadas; aquí solo se consultan
+// (y se pueden eliminar registros erróneos).
 export function MetricsPanel({ clientId }: { clientId: string }) {
   const { metrics, deleteMetric, connectedAccounts } = useFlare();
   const { confirm, dialog } = useConfirm();
-  const [formOpen, setFormOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<ClientMetric | null>(null);
 
   const clientMetrics = metrics.filter((m) => m.clientId === clientId);
   const sorted = [...clientMetrics].sort(
@@ -449,24 +439,10 @@ export function MetricsPanel({ clientId }: { clientId: string }) {
             </span>
           ))}
         </div>
-        <Button
-          size="sm"
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus data-icon="inline-start" />
-          Registrar métricas
-        </Button>
       </div>
 
       <MetricsDisplay
         metrics={clientMetrics}
-        onEdit={(m) => {
-          setEditing(m);
-          setFormOpen(true);
-        }}
         onDelete={(m) =>
           confirm({
             title: `¿Eliminar el registro de ${periodLabel(m)}?`,
@@ -479,13 +455,6 @@ export function MetricsPanel({ clientId }: { clientId: string }) {
             },
           })
         }
-      />
-
-      <MetricFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        metric={editing}
-        defaultClientId={clientId}
       />
       {dialog}
     </div>

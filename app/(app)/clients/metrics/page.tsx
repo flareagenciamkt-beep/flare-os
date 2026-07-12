@@ -20,7 +20,7 @@ export default function ClientMetricsPage() {
       <EmptyState
         icon={LineChart}
         title="No hay clientes"
-        description="Crea un cliente para empezar a registrar métricas."
+        description="Crea un cliente para ver sus métricas."
       />
     );
   }
@@ -29,7 +29,7 @@ export default function ClientMetricsPage() {
     <div>
       <PageHeader
         title="Métricas por cliente"
-        description="Registro manual mensual del rendimiento de cada marca."
+        description="Rendimiento mensual de cada marca, alimentado por sus cuentas de analytics."
         actions={
           <SimpleSelect
             className="w-56"

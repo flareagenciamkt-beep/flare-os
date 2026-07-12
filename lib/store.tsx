@@ -105,8 +105,8 @@ interface FlareStore {
   updateProcess: (id: string, data: Partial<Process>) => void;
   deleteProcess: (id: string) => void;
 
-  addMetric: (data: Omit<ClientMetric, keyof WithMeta>) => ClientMetric;
-  updateMetric: (id: string, data: Partial<ClientMetric>) => void;
+  // Las métricas entran por el sync de cuentas conectadas (server-side), no
+  // por la UI; el store solo permite borrar registros erróneos.
   deleteMetric: (id: string) => void;
 
   // Vista 360 (V1.1)
@@ -431,8 +431,6 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       updateProcess: processCrud.update,
       deleteProcess: processCrud.remove,
 
-      addMetric: metricCrud.add,
-      updateMetric: metricCrud.update,
       deleteMetric: metricCrud.remove,
 
       strategies,

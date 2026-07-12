@@ -343,28 +343,6 @@ export const processSchema = z.object({
 
 export type ProcessFormValues = z.infer<typeof processSchema>;
 
-export const metricSchema = z.object({
-  clientId: z.string().min(1, "Selecciona un cliente"),
-  periodMonth: z.coerce.number().min(1).max(12),
-  periodYear: z.coerce.number().min(2020).max(2100),
-  instagramFollowers: z.coerce.number().min(0),
-  monthlyReach: z.coerce.number().min(0),
-  impressions: z.coerce.number().min(0),
-  clicks: z.coerce.number().min(0),
-  interactions: z.coerce.number().min(0),
-  leadsGenerated: z.coerce.number().min(0),
-  whatsappClicks: z.coerce.number().min(0),
-  postsPublished: z.coerce.number().min(0),
-  reelsPublished: z.coerce.number().min(0),
-  carouselsPublished: z.coerce.number().min(0),
-  storiesPublished: z.coerce.number().min(0),
-  adSpend: z.coerce.number().min(0),
-  relevantResults: z.string(),
-  performanceNotes: z.string(),
-});
-
-export type MetricFormValues = z.infer<typeof metricSchema>;
-
 // Helpers de conversión texto ↔ estructuras
 export function parseLinks(text: string) {
   return text
