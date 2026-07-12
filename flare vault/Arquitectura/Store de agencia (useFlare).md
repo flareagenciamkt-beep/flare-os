@@ -16,5 +16,6 @@ Store global en memoria (`lib/store.tsx`, `FlareStoreProvider`, hook `useFlare()
 - `upsertStrategy()` para [[ClientStrategy]] (relación 1:1 con [[Client]]).
 - Desde V1.4 gestiona [[ConnectedAccount]]: `connectedAccounts` + `addConnectedAccount`/`updateConnectedAccount`/`deleteConnectedAccount` (mock `MOCK_CONNECTED_ACCOUNTS`).
 - Para [[ClientMetric]] **solo expone `deleteMetric`**: `addMetric`/`updateMetric` se eliminaron junto con el registro manual (`7942b4a`, ver [[Métricas]]).
+- `refresh()` (`7ad8a53`): re-lee todo desde Supabase (`fetchAll`), no-op en demo. Lo usa la UI tras el sync server-side de métricas ([[Conexión OAuth de Meta]]) para reflejar lo que escribió el servidor.
 
 Contraparte externa: [[Store del portal (usePortal)]].

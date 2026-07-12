@@ -36,3 +36,20 @@ Decisión de producto: las [[ClientMetric|métricas]] de cliente entrarán **ún
 - [[Store de agencia (useFlare)]] — solo queda `deleteMetric`
 - [[Conexión OAuth de Meta]] — el sync es ahora la única vía de ingreso pendiente
 - [[ConnectedAccount]] — una cuenta `asociada` ya no implica registro manual
+
+---
+
+## Sync de métricas con un clic y setup guiado (hasta `7ad8a53`)
+
+Tercera pasada del día. El vault queda al día **hasta `7ad8a53`** (`feat: sync de métricas con un clic y setup guiado de la integración Meta`).
+
+Se cerró el ciclo de las cuentas de analytics: el callback OAuth ahora **autodescubre la identidad** de la cuenta (`discoverAccount` en `shared.ts` — `externalId` y `@usuario` vía `/me/accounts` o `/me/adaccounts`), y el nuevo `POST /api/integrations/meta/sync` consulta el Graph API (seguidores, reach/views/interacciones e inventario de `/media` del mes) y hace **upsert del registro mensual** en `client_metrics` (solo Instagram; `team`/`admin`; token vencido → `expirada`, fallo → `error`). La UI suma el botón "Sincronizar" en el `MetricsPanel`, "Sincronizar ahora" por cuenta, sugerencias 1-clic desde [[ClientAccess|Accesos]] (`providerFromPlatform`) y la card "Integraciones · Meta" en [[Ajustes]] con checklist de setup (`GET /status`). En el store: `refresh()` para recargar tras el sync; nuevo helper cliente `lib/integrations.ts`. El ciclo queda: asociar (o 1-clic desde Accesos) → conectar OAuth → sincronizar → métricas.
+
+### Notas modificadas
+- [[Conexión OAuth de Meta]] — secciones nuevas: Sincronizar, asociación 1-clic, endpoint `/status`; el autodescubrimiento en el callback
+- [[Métricas]] — botón "Sincronizar" en el panel; el sync ya existe
+- [[ConnectedAccount]] — `externalId`/`handle` autocompletados, estados `expirada`/`error` los gestiona el sync, sugerencias 1-clic
+- [[ClientMetric]] — qué campos llena el sync y cuáles quedan en cero
+- [[Ajustes]] — card "Integraciones · Meta" con checklist guiado
+- [[ClientAccess]] — sugerencias 1-clic hacia cuentas de analytics
+- [[Store de agencia (useFlare)]] — `refresh()`

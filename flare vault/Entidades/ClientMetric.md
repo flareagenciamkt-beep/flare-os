@@ -15,6 +15,6 @@ Campos: `instagramFollowers`, `monthlyReach`, `impressions`, `clicks`, `interact
 - `performanceNotes` nunca llega al portal ([[Seguridad del portal]]); el RPC `portal_metrics` expone el resto.
 - "Métricas del mes sin registrar" es una de las [[Alertas operativas]].
 - **Ya no hay registro manual** (desde `7942b4a`): se eliminaron el formulario (`metric-form.tsx`), `metricSchema`/`MetricFormValues` (`lib/schemas.ts`) y `addMetric`/`updateMetric` del [[Store de agencia (useFlare)|store]]. Solo queda `deleteMetric` para borrar registros erróneos.
-- La entrada de datos será **exclusivamente por el sync** de las [[ConnectedAccount|cuentas de analytics conectadas]] ([[Conexión OAuth de Meta]]). El sync todavía no existe → hoy no entra ninguna métrica nueva; los registros históricos se conservan y se muestran.
+- La entrada de datos es **exclusivamente por el sync** de las [[ConnectedAccount|cuentas de analytics conectadas]] ([[Conexión OAuth de Meta]]). Desde `7ad8a53` el sync existe (solo Instagram): `POST /api/integrations/meta/sync` hace **upsert del registro del mes en curso** — llena `instagramFollowers`, `monthlyReach`, `impressions` (views), `interactions`, `postsPublished`, `reelsPublished`, `carouselsPublished`; el resto de campos (`clicks`, `leadsGenerated`, `adSpend`…) quedan en cero al crear el registro.
 
 Consumida por [[Métricas]], [[Vista 360 del cliente]] y el [[Portal de clientes]].
