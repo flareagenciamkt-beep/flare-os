@@ -23,7 +23,7 @@ actualizado: 2026-07-12
 - Transversales: [[Notificaciones]] · [[Ajustes]] · [[Autenticación y guards]] · [[Portal de clientes]]
 
 ## Entidades
-[[Client]] · [[Idea]] · [[IdeaComment]] · [[Task]] · [[Resource]] · [[Prompt]] · [[Process]] · [[ClientMetric]] · [[ClientStrategy]] · [[ClientNote]] · [[ClientAccess]] · [[ConnectedAccount]] · [[ClientMeeting]] · [[ClientBilling]] · [[Profile]] · [[PortalClient]]
+[[Client]] · [[Idea]] · [[IdeaComment]] · [[Task]] · [[Resource]] · [[Prompt]] · [[Process]] · [[ClientMetric]] · [[ClientStrategy]] · [[ClientNote]] · [[ClientAccess]] · [[ConnectedAccount]] · [[IntegrationSettings]] · [[ClientMeeting]] · [[ClientBilling]] · [[Profile]] · [[PortalClient]]
 
 ## Términos de dominio
 [[ClientStatus]] · [[ClientPhase]] · [[HealthStatus]] · [[IdeaStatus]] · [[ClientApproval]] · [[TaskStatus]] · [[TaskArea]] · [[PaymentStatus]] · [[Roles]] · [[Prioridad]] · [[Canales y formatos]] · [[Parrilla de publicación]] · [[Recurso interno]]

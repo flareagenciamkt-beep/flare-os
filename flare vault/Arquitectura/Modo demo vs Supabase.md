@@ -13,6 +13,8 @@ Flare OS corre en dos modos según haya credenciales de Supabase:
 
 Si el esquema no existe, el [[Store de agencia (useFlare)]] queda en estado `missing-schema`.
 
-Historial de migraciones (contexto de versiones): V1 `schema.sql` → 002 portal+aprobaciones → 003 [[Vista 360 del cliente]] → 004 operación V1.2 → 006 simplificación de [[IdeaStatus]] a 7 estados → 007 [[IdeaComment|comentarios]]+registro de aprobación → 008 rol admin → 009 modales premium (campos estructurados en clients/ideas/tasks) → 010 [[ConnectedAccount|cuentas conectadas]] + tokens server-only.
+Historial de migraciones (contexto de versiones): V1 `schema.sql` → 002 portal+aprobaciones → 003 [[Vista 360 del cliente]] → 004 operación V1.2 → 006 simplificación de [[IdeaStatus]] a 7 estados → 007 [[IdeaComment|comentarios]]+registro de aprobación → 008 rol admin → 009 modales premium (campos estructurados en clients/ideas/tasks) → 010 [[ConnectedAccount|cuentas conectadas]] + tokens server-only → 011 [[IntegrationSettings|`integration_settings`]] (credenciales de integraciones server-only).
 
-El proyecto está **vinculado al CLI de Supabase** (sesión 2026-07-11): se reparó el historial de migraciones (002–009 marcadas como aplicadas) y `supabase db push` quedó operativo; la 010 ya está aplicada en la base viva.
+El proyecto está **vinculado al CLI de Supabase** (sesión 2026-07-11): se reparó el historial de migraciones (002–009 marcadas como aplicadas) y `supabase db push` quedó operativo; la 010 y la 011 ya están aplicadas en la base viva.
+
+**Deploy** (`ab164c8`, cierre de la fase 7): el proyecto vive en **Vercel** (team `flareagenciamkt-beeps-projects`, dominio `flare-os.vercel.app`) con auto-deploy desde `main` de GitHub. `SUPABASE_SECRET_KEY` está configurada en Vercel (production + preview) y `.env.local` — es el **único secreto de bootstrap**: el resto de la configuración (credenciales de Meta) se hace desde la app en [[Ajustes]].

@@ -9,7 +9,17 @@ actualizado: 2026-07-12
 
 Flujo (V1.4) para conectar por OAuth una [[ConnectedAccount]] de proveedor Meta (`instagram`, `facebook`, `meta_ads`) y **sincronizar sus [[ClientMetric|métricas]]** con un clic. Desde `7ad8a53` el ciclo está completo: **asociar → conectar → sincronizar → métricas en `client_metrics`**.
 
-**Patrón 501 (como `portal-users`)**: detrás de las env vars `META_APP_ID` / `META_APP_SECRET` (solo servidor, `.env.example`). Sin credenciales, los endpoints responden `501`, la UI muestra un aviso y la cuenta queda `asociada` en modo manual — todo sigue funcionando. `GET /api/integrations/meta/status` expone `metaConfigured` y `serverKeyConfigured` (booleanos, sin secretos) para la card de setup guiado en [[Ajustes]].
+## Origen de las credenciales (`ab164c8`)
+
+Las credenciales de la app de Meta **se configuran desde la propia app**, no por código ni env: el admin las pega en [[Ajustes|Ajustes → Integraciones]] y quedan en [[IntegrationSettings|`integration_settings`]] (tabla server-only, migración 011). `getMetaConfig(admin)` (`shared.ts`) las resuelve en cascada: **primero la base** (`source: "db"`), y como fallback las env vars `META_APP_ID`/`META_APP_SECRET` (`source: "env"`, ya comentadas en `.env.example`). Sin credenciales en ninguno de los dos lados, los endpoints responden `501`, la UI avisa y la cuenta queda `asociada` en modo manual — todo sigue funcionando. El único secreto que sí exige env es `SUPABASE_SECRET_KEY` (bootstrap de infraestructura, una sola vez).
+
+**`/api/integrations/meta/credentials`** (`app/api/integrations/meta/credentials/route.ts`) — reemplaza y elimina el antiguo `GET /status`:
+
+- `GET` (roles `team`/`admin`): estado de configuración — `serverKeyConfigured`, `metaConfigured`, `source` y el **App ID enmascarado** (`1234…89`). Nunca el secreto.
+- `POST` (solo `admin`): guarda App ID (validado numérico con zod) y App Secret vía upsert en `integration_settings` con `updated_by`.
+- `DELETE` (solo `admin`): desconecta la integración (borra la fila `meta`).
+
+El helper **`requireRole(admin, request, roles)`** (`shared.ts`) centraliza la autenticación de las rutas (JWT del header → `auth.getUser` → rol del [[Profile|profile]]): lo usan `connect`, `sync` y `credentials`. El `callback` no puede usarlo (llega por redirect sin `Authorization`) y sigue confiando en el `state` firmado.
 
 ## Conectar (OAuth)
 
@@ -40,7 +50,7 @@ La sección "Cuentas de analytics" sugiere asociar como [[ConnectedAccount]] los
 ## Seguridad
 
 - Tokens **nunca** llegan al navegador ni al tipo `ConnectedAccount`: solo los route handlers con `SUPABASE_SECRET_KEY` los leen/escriben.
+- Las credenciales de la app viven en [[IntegrationSettings|`integration_settings`]] (RLS sin policies, server-only): el **App Secret jamás vuelve al navegador**; `GET /credentials` solo devuelve estados y el App ID enmascarado.
 - `META_OAUTH_REDIRECT_URL` opcional para cuando el dominio público difiere del origen.
-- `/status` solo devuelve booleanos de configuración, nunca los valores.
 
 **Pendiente**: sync de `facebook`, `meta_ads` y demás proveedores; renovación automática del token antes de los ~60 días.

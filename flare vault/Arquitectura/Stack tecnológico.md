@@ -1,7 +1,7 @@
 ---
 tags: [arquitectura]
 fuente: package.json
-actualizado: 2026-07-11
+actualizado: 2026-07-12
 ---
 
 # Stack tecnológico
@@ -13,5 +13,6 @@ actualizado: 2026-07-11
 - **react-hook-form + zod 4** (`lib/schemas.ts`) para formularios.
 - **sonner** (toasts), **lucide-react** (iconos), **date-fns**, **next-themes**.
 - **Playwright** para tests E2E (`tests/`, `playwright.config.ts`).
+- **Deploy en Vercel** — `flare-os.vercel.app` (team `flareagenciamkt-beeps-projects`), auto-deploy desde `main`. Detalles de env/secretos en [[Modo demo vs Supabase]].
 
 Relacionado: [[Estructura del proyecto]], [[Store de agencia (useFlare)]].

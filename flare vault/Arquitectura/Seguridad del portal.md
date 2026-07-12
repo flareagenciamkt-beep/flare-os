@@ -1,7 +1,7 @@
 ---
 tags: [arquitectura]
-fuente: supabase/migrations/002, supabase/migrations/003, supabase/migrations/007
-actualizado: 2026-07-11
+fuente: supabase/migrations/002, supabase/migrations/003, supabase/migrations/007, supabase/migrations/011
+actualizado: 2026-07-12
 ---
 
 # Seguridad del portal
@@ -12,5 +12,6 @@ El [[Portal de clientes]] **nunca toca tablas base**: todo pasa por RPCs `securi
 
 - Comentarios bidireccionales equipo↔cliente vía `idea_comments` + RPCs `portal_comments`/`portal_add_comment` (migración 007). Ver [[IdeaComment]].
 - Creación de usuarios del portal: `app/api/portal-users/route.ts` — usa `SUPABASE_SECRET_KEY` solo en servidor y exige que quien llama sea rol `team`/`admin`.
+- **Patrón de tablas server-only** (RLS habilitado sin policies → solo la service key las toca): `connected_account_tokens` (tokens OAuth de [[ConnectedAccount]]) e [[IntegrationSettings|`integration_settings`]] (credenciales de integraciones). Los secretos jamás llegan al navegador.
 - Guards de ruteo: ver [[Autenticación y guards]].
 - RLS por rol: ver [[Roles]] y [[Permisos y capacidades]].

@@ -53,3 +53,22 @@ Se cerró el ciclo de las cuentas de analytics: el callback OAuth ahora **autode
 - [[Ajustes]] — card "Integraciones · Meta" con checklist guiado
 - [[ClientAccess]] — sugerencias 1-clic hacia cuentas de analytics
 - [[Store de agencia (useFlare)]] — `refresh()`
+
+---
+
+## Credenciales de Meta desde la app y deploy en Vercel (hasta `ab164c8`)
+
+Cuarta pasada del día. El vault queda al día **hasta `ab164c8`** (`feat: credenciales de Meta configurables desde Ajustes (sin tocar código)`).
+
+Las credenciales de la integración de Meta ya no viven en env: el admin las pega en [[Ajustes|Ajustes → Integraciones]] (formulario App ID + App Secret) y quedan en la tabla server-only [[IntegrationSettings|`integration_settings`]] (migración 011, RLS sin policies, ya aplicada en producción). La nueva ruta `/api/integrations/meta/credentials` (GET estado + App ID enmascarado / POST solo admin / DELETE solo admin) **reemplaza y elimina** `/api/integrations/meta/status`. En `shared.ts`: `getMetaConfig(admin)` resuelve credenciales base-primero con fallback a `META_APP_ID`/`META_APP_SECRET`, y `requireRole()` centraliza la autenticación de las rutas. Además quedó cerrada la **fase 7 de deploy**: el proyecto corre en Vercel (`flare-os.vercel.app`, auto-deploy desde `main`) con `SUPABASE_SECRET_KEY` como único secreto de bootstrap.
+
+### Notas creadas
+- [[IntegrationSettings]]
+
+### Notas modificadas
+- [[Conexión OAuth de Meta]] — sección "Origen de las credenciales": `getMetaConfig`, ruta `/credentials`, helper `requireRole`; `/status` eliminado
+- [[Ajustes]] — la card de integraciones ahora es un formulario (secreto nunca vuelve al navegador)
+- [[Modo demo vs Supabase]] — migración 011 en el historial + sección "Deploy" (Vercel)
+- [[Seguridad del portal]] — patrón de tablas server-only (tokens + credenciales)
+- [[Stack tecnológico]] — deploy en Vercel
+- [[Home]] — enlace a [[IntegrationSettings]]
