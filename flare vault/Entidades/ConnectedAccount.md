@@ -23,7 +23,7 @@ Campos: `provider` (`ConnectedProvider`: `instagram | facebook | tiktok | youtub
 | `error` | el último sync/OAuth falló |
 | `desconectada` | desvinculada de la API (sigue asociada al cliente) |
 
-- La conexión OAuth es **opcional**: sin credenciales de la plataforma la cuenta queda `asociada` y el registro de métricas sigue manual. Ver [[Conexión OAuth de Meta]].
+- La conexión OAuth es **opcional**: sin credenciales de la plataforma la cuenta queda `asociada`. Ojo: como el registro manual de [[ClientMetric|métricas]] se retiró (`7942b4a`), una cuenta solo `asociada` **no alimenta métricas** hasta que exista el sync. Ver [[Conexión OAuth de Meta]].
 - **Los tokens nunca viven en esta entidad**: van en la tabla `connected_account_tokens` (RLS habilitado **sin policies** → solo la service key del servidor los toca).
 - RLS de `connected_accounts`: `team_all` vía `is_team()` — el [[Portal de clientes]] no la ve.
 - Formulario: `connectedAccountSchema` (`lib/schemas.ts`) solo pide `provider`, `handle`, `url`, `notes`; el estado y los campos de sync los gestiona el sistema.

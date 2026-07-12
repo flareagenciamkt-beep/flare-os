@@ -21,3 +21,18 @@ Se introdujo [[ConnectedAccount]] (V1.4): cuentas de plataformas asociadas a un 
 - [[Store de agencia (useFlare)]] — CRUD de `connectedAccounts`
 - [[Modo demo vs Supabase]] — migración 010 y vínculo al CLI de Supabase
 - [[Home]] — enlaces a las notas nuevas
+
+---
+
+## Retiro del registro manual de métricas (hasta `7942b4a`)
+
+Segunda pasada del día. El vault queda al día **hasta `7942b4a`** (`feat: retirar el registro manual de métricas`).
+
+Decisión de producto: las [[ClientMetric|métricas]] de cliente entrarán **únicamente por el sync** de las [[ConnectedAccount|cuentas de analytics conectadas]]. Se eliminaron `components/forms/metric-form.tsx`, `metricSchema`/`MetricFormValues` (`lib/schemas.ts`) y `addMetric`/`updateMetric` del store; se conserva `deleteMetric` para borrar registros erróneos. El `MetricsPanel` queda en solo consulta + eliminar (sin botón "Registrar métricas" ni Editar; `MetricsTable` perdió `onEdit`) y los copys/empty states apuntan a las cuentas de analytics. Como el sync aún no existe, hoy no hay vía de ingreso de métricas nuevas (los históricos se conservan).
+
+### Notas modificadas
+- [[Métricas]] — sección "Solo consulta (sin registro manual)"
+- [[ClientMetric]] — sin registro manual; entrada futura solo por sync
+- [[Store de agencia (useFlare)]] — solo queda `deleteMetric`
+- [[Conexión OAuth de Meta]] — el sync es ahora la única vía de ingreso pendiente
+- [[ConnectedAccount]] — una cuenta `asociada` ya no implica registro manual

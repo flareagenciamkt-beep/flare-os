@@ -23,4 +23,4 @@ Flujo (esqueleto, V1.4) para conectar por OAuth una [[ConnectedAccount]] de prov
 - Tokens **nunca** llegan al navegador ni al tipo `ConnectedAccount`: solo los route handlers con `SUPABASE_SECRET_KEY` los leen/escriben.
 - `META_OAUTH_REDIRECT_URL` opcional para cuando el dominio público difiere del origen.
 
-**Pendiente**: el sync de métricas en sí no existe todavía — el registro en [[Métricas]] sigue siendo manual.
+**Pendiente**: el sync de métricas en sí no existe todavía. Y como el registro manual se retiró (`7942b4a`, ver [[Métricas]]), **hoy no hay ninguna vía de ingreso de métricas nuevas** — el sync es el eslabón que falta.

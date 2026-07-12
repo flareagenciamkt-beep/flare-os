@@ -15,5 +15,6 @@ Store global en memoria (`lib/store.tsx`, `FlareStoreProvider`, hook `useFlare()
 - `approveIdea()` = aprobación interna del equipo (capability `approveInternally`, ver [[Permisos y capacidades]]).
 - `upsertStrategy()` para [[ClientStrategy]] (relación 1:1 con [[Client]]).
 - Desde V1.4 gestiona [[ConnectedAccount]]: `connectedAccounts` + `addConnectedAccount`/`updateConnectedAccount`/`deleteConnectedAccount` (mock `MOCK_CONNECTED_ACCOUNTS`).
+- Para [[ClientMetric]] **solo expone `deleteMetric`**: `addMetric`/`updateMetric` se eliminaron junto con el registro manual (`7942b4a`, ver [[Métricas]]).
 
 Contraparte externa: [[Store del portal (usePortal)]].
