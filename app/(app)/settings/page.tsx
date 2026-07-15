@@ -79,7 +79,7 @@ export default function SettingsPage() {
             {isSupabaseConfigured ? (
               <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 text-xs text-emerald-300/90">
                 Supabase conectado: los datos se guardan en la base real (tablas
-                clients, ideas, tasks, resources, prompts, processes, client_metrics y
+                clients, ideas, tasks, client_metrics, connected_accounts y
                 profiles) con Row Level Security para el equipo autenticado.
               </div>
             ) : (
@@ -199,11 +199,10 @@ export default function SettingsPage() {
             </p>
             <p className="text-xs leading-relaxed text-muted-foreground">
               Sistema operativo interno de la agencia Flare: base de clientes con
-              vista 360, progreso operativo y métricas con gráficos, ideas, feed,
-              kanban, calendario editorial, tareas, facturación, biblioteca,
-              prompts y procesos, más el portal de aprobaciones para clientes.
-              Construido con Next.js, TypeScript, Tailwind y Shadcn UI sobre
-              Supabase.
+              vista 360, métricas con cuentas conectadas, contenido (lista, kanban,
+              calendario y feed), tareas y facturación, más el portal de
+              aprobaciones para clientes. Construido con Next.js, TypeScript,
+              Tailwind y Shadcn UI sobre Supabase.
             </p>
           </CardContent>
         </Card>

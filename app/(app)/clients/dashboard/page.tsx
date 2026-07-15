@@ -204,7 +204,7 @@ export default function ClientsDashboardPage() {
               <InfoHint text="Promedio del % de avance de los clientes activos. Combina producción, tareas, calendario y el progreso manual de cada cuenta." />
             </span>
           }
-          href="/clients/progress"
+          href="/clients"
           contentClassName="items-center justify-center"
         >
           <RingStat value={averageProgress(clients)} label="clientes activos" />

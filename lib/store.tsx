@@ -22,9 +22,6 @@ import {
   MOCK_IDEAS,
   MOCK_MEETINGS,
   MOCK_METRICS,
-  MOCK_PROCESSES,
-  MOCK_PROMPTS,
-  MOCK_RESOURCES,
   MOCK_STRATEGIES,
   MOCK_TASKS,
 } from "./mock-data";
@@ -41,9 +38,6 @@ import type {
   Idea,
   IdeaComment,
   IdeaStatus,
-  Process,
-  Prompt,
-  Resource,
   Task,
 } from "./types";
 
@@ -63,9 +57,6 @@ interface FlareStore {
   clients: Client[];
   ideas: Idea[];
   tasks: Task[];
-  resources: Resource[];
-  prompts: Prompt[];
-  processes: Process[];
   metrics: ClientMetric[];
 
   addClient: (data: Omit<Client, keyof WithMeta | "lastUpdate">) => Client;
@@ -92,18 +83,6 @@ interface FlareStore {
   addTask: (data: Omit<Task, keyof WithMeta>) => Task;
   updateTask: (id: string, data: Partial<Task>) => void;
   deleteTask: (id: string) => void;
-
-  addResource: (data: Omit<Resource, keyof WithMeta>) => Resource;
-  updateResource: (id: string, data: Partial<Resource>) => void;
-  deleteResource: (id: string) => void;
-
-  addPrompt: (data: Omit<Prompt, keyof WithMeta>) => Prompt;
-  updatePrompt: (id: string, data: Partial<Prompt>) => void;
-  deletePrompt: (id: string) => void;
-
-  addProcess: (data: Omit<Process, keyof WithMeta>) => Process;
-  updateProcess: (id: string, data: Partial<Process>) => void;
-  deleteProcess: (id: string) => void;
 
   // Las métricas entran por el sync de cuentas conectadas (server-side), no
   // por la UI; el store solo permite borrar registros erróneos.
@@ -215,13 +194,6 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   const [clients, setClients] = React.useState<Client[]>(configured ? [] : MOCK_CLIENTS);
   const [ideas, setIdeas] = React.useState<Idea[]>(configured ? [] : MOCK_IDEAS);
   const [tasks, setTasks] = React.useState<Task[]>(configured ? [] : MOCK_TASKS);
-  const [resources, setResources] = React.useState<Resource[]>(
-    configured ? [] : MOCK_RESOURCES,
-  );
-  const [prompts, setPrompts] = React.useState<Prompt[]>(configured ? [] : MOCK_PROMPTS);
-  const [processes, setProcesses] = React.useState<Process[]>(
-    configured ? [] : MOCK_PROCESSES,
-  );
   const [metrics, setMetrics] = React.useState<ClientMetric[]>(
     configured ? [] : MOCK_METRICS,
   );
@@ -255,13 +227,10 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
   // reintentos lo fijan antes de llamar (evita setState síncrono en efectos).
   const fetchAll = React.useCallback(async () => {
     const sb = getSupabase();
-    const [c, i, t, r, p, pr, m, st, cn, ac, ca, mt, bi, cm] = await Promise.all([
+    const [c, i, t, m, st, cn, ac, ca, mt, bi, cm] = await Promise.all([
       sb.from("clients").select("*").order("created_at"),
       sb.from("ideas").select("*").order("created_at", { ascending: false }),
       sb.from("tasks").select("*").order("created_at", { ascending: false }),
-      sb.from("resources").select("*").order("created_at", { ascending: false }),
-      sb.from("prompts").select("*").order("created_at", { ascending: false }),
-      sb.from("processes").select("*").order("created_at", { ascending: false }),
       sb.from("client_metrics").select("*"),
       sb.from("client_strategy").select("*"),
       sb.from("client_notes").select("*").order("created_at", { ascending: false }),
@@ -271,9 +240,7 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       sb.from("client_billing").select("*").order("created_at", { ascending: false }),
       sb.from("idea_comments").select("*").order("created_at", { ascending: true }),
     ]);
-    const failed = [c, i, t, r, p, pr, m, st, cn, ac, ca, mt, bi, cm].find(
-      (res) => res.error,
-    );
+    const failed = [c, i, t, m, st, cn, ac, ca, mt, bi, cm].find((res) => res.error);
     if (failed?.error) {
       if (failed.error.code === "PGRST205") {
         setStatus("missing-schema");
@@ -286,9 +253,6 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     setClients((c.data ?? []).map((row) => fromRow<Client>(row)));
     setIdeas((i.data ?? []).map((row) => fromRow<Idea>(row)));
     setTasks((t.data ?? []).map((row) => fromRow<Task>(row)));
-    setResources((r.data ?? []).map((row) => fromRow<Resource>(row)));
-    setPrompts((p.data ?? []).map((row) => fromRow<Prompt>(row)));
-    setProcesses((pr.data ?? []).map((row) => fromRow<Process>(row)));
     setMetrics((m.data ?? []).map((row) => fromRow<ClientMetric>(row)));
     setStrategies((st.data ?? []).map((row) => fromRow<ClientStrategy>(row)));
     setClientNotes((cn.data ?? []).map((row) => fromRow<ClientNote>(row)));
@@ -357,9 +321,6 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     const clientCrud = makeCrud<Client>("clients", setClients);
     const ideaCrud = makeCrud<Idea>("ideas", setIdeas);
     const taskCrud = makeCrud<Task>("tasks", setTasks);
-    const resourceCrud = makeCrud<Resource>("resources", setResources);
-    const promptCrud = makeCrud<Prompt>("prompts", setPrompts);
-    const processCrud = makeCrud<Process>("processes", setProcesses);
     const metricCrud = makeCrud<ClientMetric>("client_metrics", setMetrics);
     const strategyCrud = makeCrud<ClientStrategy>("client_strategy", setStrategies);
     const noteCrud = makeCrud<ClientNote>("client_notes", setClientNotes);
@@ -376,9 +337,6 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       clients,
       ideas,
       tasks,
-      resources,
-      prompts,
-      processes,
       metrics,
 
       addClient: (data) =>
@@ -420,18 +378,6 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
       addTask: taskCrud.add,
       updateTask: taskCrud.update,
       deleteTask: taskCrud.remove,
-
-      addResource: resourceCrud.add,
-      updateResource: resourceCrud.update,
-      deleteResource: resourceCrud.remove,
-
-      addPrompt: promptCrud.add,
-      updatePrompt: promptCrud.update,
-      deletePrompt: promptCrud.remove,
-
-      addProcess: processCrud.add,
-      updateProcess: processCrud.update,
-      deleteProcess: processCrud.remove,
 
       deleteMetric: metricCrud.remove,
 
@@ -483,9 +429,6 @@ export function FlareStoreProvider({ children }: { children: React.ReactNode }) 
     clients,
     ideas,
     tasks,
-    resources,
-    prompts,
-    processes,
     metrics,
     strategies,
     clientNotes,

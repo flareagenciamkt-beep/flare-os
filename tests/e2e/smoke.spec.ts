@@ -5,8 +5,6 @@ const APP_ROUTES = [
   "/clients/dashboard",
   "/clients",
   "/clients/metrics",
-  "/clients/progress",
-  "/clients/notes",
   "/clients/billing",
   "/agency/dashboard",
   "/agency/tasks",
@@ -15,9 +13,6 @@ const APP_ROUTES = [
   "/agency/feed",
   "/agency/ideas",
   "/agency/metrics",
-  "/agency/processes",
-  "/agency/library",
-  "/agency/prompts",
   "/settings",
 ];
 

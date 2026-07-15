@@ -37,8 +37,6 @@ export const NAV_TABS: NavTab[] = [
     icon: Users,
     items: [
       { href: "/clients", label: "Directorio" },
-      { href: "/clients/progress", label: "Progreso" },
-      { href: "/clients/notes", label: "Notas" },
     ],
   },
   { label: "Contenido", icon: LayoutGrid, href: "/agency/content" },
@@ -55,9 +53,6 @@ export const NAV_TABS: NavTab[] = [
     label: "Recursos",
     icon: FolderOpen,
     items: [
-      { href: "/agency/library", label: "Biblioteca" },
-      { href: "/agency/prompts", label: "Prompts" },
-      { href: "/agency/processes", label: "Procesos" },
     ],
   },
   {

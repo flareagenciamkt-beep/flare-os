@@ -360,73 +360,6 @@ export interface Task {
   updatedAt: string;
 }
 
-export type ResourceType =
-  | "logo"
-  | "brandbook"
-  | "foto"
-  | "video"
-  | "documento"
-  | "prompt"
-  | "sop"
-  | "plantilla"
-  | "script"
-  | "nota"
-  | "referencia"
-  | "proceso"
-  | "link"
-  | "otro";
-export type ResourceCategory =
-  | "contenido"
-  | "diseno"
-  | "estrategia"
-  | "automatizacion"
-  | "ventas"
-  | "desarrollo"
-  | "cliente"
-  | "otro";
-
-export interface Resource {
-  id: string;
-  clientId: string | null;
-  title: string;
-  type: ResourceType;
-  category: ResourceCategory;
-  content: string;
-  externalLink: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Prompt {
-  id: string;
-  clientId: string | null;
-  title: string;
-  category: ResourceCategory;
-  promptContent: string;
-  recommendedUse: string;
-  requiredVariables: string[];
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type ProcessStatus = "activo" | "borrador" | "archivado";
-
-export interface Process {
-  id: string;
-  clientId: string | null;
-  title: string;
-  area: TaskArea;
-  description: string;
-  steps: string[];
-  responsible: string;
-  frequency: string;
-  status: ProcessStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
 // Subconjunto de Client expuesto al portal (espejo del RPC portal_client)
 export interface PortalClient {
   id: string;
@@ -599,40 +532,6 @@ export const TASK_AREA_OPTIONS = [
   "cliente",
   "admin",
 ].map((v) => ({ value: v, label: AREA_LABELS[v as TaskArea] }));
-
-export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
-  logo: "Logo",
-  brandbook: "Brandbook",
-  foto: "Foto",
-  video: "Video",
-  documento: "Documento",
-  prompt: "Prompt",
-  sop: "SOP",
-  plantilla: "Plantilla",
-  script: "Script",
-  nota: "Nota",
-  referencia: "Referencia",
-  proceso: "Proceso",
-  link: "Link",
-  otro: "Otro",
-};
-
-export const RESOURCE_CATEGORY_LABELS: Record<ResourceCategory, string> = {
-  contenido: "Contenido",
-  diseno: "Diseño",
-  estrategia: "Estrategia",
-  automatizacion: "Automatización",
-  ventas: "Ventas",
-  desarrollo: "Desarrollo",
-  cliente: "Cliente",
-  otro: "Otro",
-};
-
-export const PROCESS_STATUS_LABELS: Record<ProcessStatus, string> = {
-  activo: "Activo",
-  borrador: "Borrador",
-  archivado: "Archivado",
-};
 
 export const NOTE_TYPE_LABELS: Record<NoteType, string> = {
   general: "General",

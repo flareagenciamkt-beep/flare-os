@@ -39,12 +39,10 @@ import {
 import { ClientFormDialog } from "@/components/forms/client-form";
 import { IdeaFormDialog } from "@/components/forms/idea-form";
 import { TaskFormDialog } from "@/components/forms/task-form";
-import { ResourceFormDialog } from "@/components/forms/resource-form";
 import { NoteFormDialog } from "@/components/forms/note-form";
 import { CalendarView } from "@/components/ideas/calendar-view";
 import { TasksTable } from "@/components/tasks/tasks-table";
 import { MetricsPanel } from "@/components/metrics/metrics-panel";
-import { ResourceCard } from "@/components/library/resource-card";
 import { PortalAccessCard } from "@/components/clients/portal-access-card";
 import { StrategyTab } from "@/components/clients/strategy-tab";
 import { NotesTab } from "@/components/clients/notes-tab";
@@ -61,15 +59,7 @@ import {
   publishedThisMonth,
   summarizeClient,
 } from "@/lib/stats";
-import {
-  PHASE_LABELS,
-  RESOURCE_TYPE_LABELS,
-  optionsFromLabels,
-  type Idea,
-  type Resource,
-  type Task,
-} from "@/lib/types";
-import { SimpleSelect } from "@/components/shared/simple-select";
+import { PHASE_LABELS, type Idea, type Task } from "@/lib/types";
 
 const TABS = [
   { value: "resumen", label: "Resumen" },
@@ -79,7 +69,6 @@ const TABS = [
   { value: "tareas", label: "Tareas" },
   { value: "metricas", label: "Métricas" },
   { value: "notas", label: "Notas" },
-  { value: "recursos", label: "Recursos" },
   { value: "accesos", label: "Accesos" },
   { value: "reuniones", label: "Reuniones" },
   { value: "facturacion", label: "Facturación" },
@@ -120,7 +109,6 @@ export default function ClientDetailPage({
     clients,
     ideas,
     tasks,
-    resources,
     clientNotes,
     meetings,
     metrics,
@@ -135,11 +123,8 @@ export default function ClientDetailPage({
   const [ideaDefaultDate, setIdeaDefaultDate] = React.useState<string | undefined>();
   const [taskFormOpen, setTaskFormOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | null>(null);
-  const [resourceFormOpen, setResourceFormOpen] = React.useState(false);
-  const [editingResource, setEditingResource] = React.useState<Resource | null>(null);
   const [noteFormOpen, setNoteFormOpen] = React.useState(false);
   const [notesDraft, setNotesDraft] = React.useState<string | null>(null);
-  const [resourceType, setResourceType] = React.useState("all");
 
   if (!client) {
     return (
@@ -159,9 +144,6 @@ export default function ClientDetailPage({
 
   const clientIdeas = ideas.filter((i) => i.clientId === client.id);
   const clientTasks = tasks.filter((t) => t.clientId === client.id);
-  const clientResources = resources
-    .filter((r) => r.clientId === client.id)
-    .filter((r) => resourceType === "all" || r.type === resourceType);
   const summary = summarizeClient(client.id, ideas, tasks);
   const alerts = clientAlerts(client, ideas, tasks, metrics, accesses);
   const progress = clientOperationalProgress(client, ideas, tasks, metrics);
@@ -526,63 +508,6 @@ export default function ClientDetailPage({
           </Card>
         </TabsContent>
 
-        <TabsContent value="recursos" className="pt-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <SimpleSelect
-              size="sm"
-              className="w-40"
-              value={resourceType}
-              onChange={setResourceType}
-              options={[
-                { value: "all", label: "Todos los tipos" },
-                ...optionsFromLabels(RESOURCE_TYPE_LABELS),
-              ]}
-            />
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingResource(null);
-                setResourceFormOpen(true);
-              }}
-            >
-              <Plus data-icon="inline-start" />
-              Nuevo recurso
-            </Button>
-          </div>
-          {clientResources.length ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {clientResources.map((r) => (
-                <ResourceCard
-                  key={r.id}
-                  resource={r}
-                  showClient={false}
-                  onEdit={(res) => {
-                    setEditingResource(res);
-                    setResourceFormOpen(true);
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              title="Sin recursos para este cliente"
-              description="Guarda logo, brandbook, plantillas, links de Drive/Canva y referencias."
-              action={
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingResource(null);
-                    setResourceFormOpen(true);
-                  }}
-                >
-                  <Plus data-icon="inline-start" />
-                  Nuevo recurso
-                </Button>
-              }
-            />
-          )}
-        </TabsContent>
-
         <TabsContent value="accesos" className="pt-4">
           <AccessTab clientId={client.id} />
         </TabsContent>
@@ -612,12 +537,6 @@ export default function ClientDetailPage({
         open={taskFormOpen}
         onOpenChange={setTaskFormOpen}
         task={editingTask}
-        defaultClientId={client.id}
-      />
-      <ResourceFormDialog
-        open={resourceFormOpen}
-        onOpenChange={setResourceFormOpen}
-        resource={editingResource}
         defaultClientId={client.id}
       />
       <NoteFormDialog

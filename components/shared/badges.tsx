@@ -8,7 +8,6 @@ import {
   IDEA_STATUS_LABELS,
   PHASE_LABELS,
   PRIORITY_LABELS,
-  PROCESS_STATUS_LABELS,
   TASK_STATUS_LABELS,
   type Channel,
   type ClientApproval,
@@ -18,7 +17,6 @@ import {
   type IdeaFormat,
   type IdeaStatus,
   type Priority,
-  type ProcessStatus,
   type TaskStatus,
 } from "@/lib/types";
 
@@ -126,15 +124,6 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
       {TASK_STATUS_LABELS[status]}
     </Pill>
   );
-}
-
-export function ProcessStatusBadge({ status }: { status: ProcessStatus }) {
-  const styles: Record<ProcessStatus, string> = {
-    activo: "border-[rgba(61,214,140,0.26)] bg-[rgba(61,214,140,0.08)] text-[#3DD68C]",
-    borrador: "border-[rgba(255,194,71,0.26)] bg-[rgba(255,194,71,0.08)] text-[#FFC247]",
-    archivado: "border-[rgba(241,233,224,0.1)] bg-[rgba(241,233,224,0.03)] text-[#6e665f]",
-  };
-  return <Pill className={styles[status]}>{PROCESS_STATUS_LABELS[status]}</Pill>;
 }
 
 export function ChannelBadge({ channel }: { channel: Channel }) {
