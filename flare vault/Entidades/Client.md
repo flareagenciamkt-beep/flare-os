@@ -2,7 +2,7 @@
 tags: [entidad]
 aliases: [Cliente, clients]
 fuente: lib/types.ts, supabase/schema.sql
-actualizado: 2026-07-11
+actualizado: 2026-07-15
 ---
 
 # Client
@@ -16,7 +16,7 @@ Comercial (V1.1): `monthlyFee`, `currency` (USD/COP/EUR/MXN), `startDate`, `acti
 Modales premium (V1.3, opcionales): `monthlyGoalType/Value`, `contentGoalType/Value`, `reviewFrequency`, `mainFormats[]`, `publishFrequency`, `contractType`, `paymentMethod`, `clientPaymentStatus`, `renewalDate`, `portalContactName`, `portalAccessEmail`, `portalRole`, `portalVisibility`, `portalPermissions` (`metrics/calendar/comment/approve/createTasks/reports/download`).
 
 ## Relaciones
-- 1:N → [[Idea]], [[Task]], [[Resource]], [[Prompt]], [[Process]] (todas con `clientId` **nullable** → [[Recurso interno]]; `on delete set null`)
+- 1:N → [[Idea]], [[Task]] (ambas con `clientId` **nullable** → [[Recurso interno]]; `on delete set null`). Hasta `92cf0ab` también `Resource`/`Prompt`/`Process`, retirados de la app (las tablas conservan sus datos en Supabase).
 - 1:N cascade → [[ClientMetric]], [[ClientNote]], [[ClientAccess]], [[ClientMeeting]], [[ClientBilling]]
 - 1:1 → [[ClientStrategy]] (`client_id unique`, cascade)
 - [[Profile]].`clientId` (set null) vincula un usuario rol `client` a su marca

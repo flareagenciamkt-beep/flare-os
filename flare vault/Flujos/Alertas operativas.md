@@ -2,7 +2,7 @@
 tags: [flujo]
 aliases: [clientAlerts]
 fuente: lib/stats.ts
-actualizado: 2026-07-11
+actualizado: 2026-07-15
 ---
 
 # Alertas operativas
@@ -15,4 +15,4 @@ actualizado: 2026-07-11
 - Métricas del mes sin registrar ([[ClientMetric]])
 - Accesos pendientes ([[ClientAccess]])
 
-Consumidas por [[Notificaciones]], la vista Progreso del [[Directorio de clientes]] y la [[Vista 360 del cliente]].
+Consumidas por [[Notificaciones]] y la [[Vista 360 del cliente]] (la vista global Clientes → Progreso que también las mostraba se retiró en `92cf0ab`).

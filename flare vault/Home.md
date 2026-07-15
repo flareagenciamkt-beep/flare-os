@@ -1,7 +1,7 @@
 ---
 tags: [moc]
 aliases: [Índice, Index]
-actualizado: 2026-07-12
+actualizado: 2026-07-15
 ---
 
 # Flare OS — Vault de conocimiento
@@ -19,11 +19,10 @@ actualizado: 2026-07-12
 - Dashboards: [[Dashboard de clientes]] · [[Dashboard de agencia]]
 - Clientes: [[Directorio de clientes]] · [[Vista 360 del cliente]] · [[Facturación]] · [[Métricas]]
 - Producción: [[Contenido]] · [[Tareas]]
-- Recursos: [[Biblioteca de recursos]] · [[Biblioteca de prompts]] · [[Procesos (SOPs)]]
 - Transversales: [[Notificaciones]] · [[Ajustes]] · [[Autenticación y guards]] · [[Portal de clientes]]
 
 ## Entidades
-[[Client]] · [[Idea]] · [[IdeaComment]] · [[Task]] · [[Resource]] · [[Prompt]] · [[Process]] · [[ClientMetric]] · [[ClientStrategy]] · [[ClientNote]] · [[ClientAccess]] · [[ConnectedAccount]] · [[IntegrationSettings]] · [[ClientMeeting]] · [[ClientBilling]] · [[Profile]] · [[PortalClient]]
+[[Client]] · [[Idea]] · [[IdeaComment]] · [[Task]] · [[ClientMetric]] · [[ClientStrategy]] · [[ClientNote]] · [[ClientAccess]] · [[ConnectedAccount]] · [[IntegrationSettings]] · [[ClientMeeting]] · [[ClientBilling]] · [[Profile]] · [[PortalClient]]
 
 ## Términos de dominio
 [[ClientStatus]] · [[ClientPhase]] · [[HealthStatus]] · [[IdeaStatus]] · [[ClientApproval]] · [[TaskStatus]] · [[TaskArea]] · [[PaymentStatus]] · [[Roles]] · [[Prioridad]] · [[Canales y formatos]] · [[Parrilla de publicación]] · [[Recurso interno]]
