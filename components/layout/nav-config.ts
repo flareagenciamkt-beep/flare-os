@@ -6,7 +6,6 @@ import {
   Banknote,
   Building2,
   CheckSquare,
-  FolderOpen,
   LayoutDashboard,
   LayoutGrid,
   LineChart,
@@ -47,12 +46,6 @@ export const NAV_TABS: NavTab[] = [
     items: [
       { href: "/clients/metrics", label: "Por cliente" },
       { href: "/agency/metrics", label: "Operativas" },
-    ],
-  },
-  {
-    label: "Recursos",
-    icon: FolderOpen,
-    items: [
     ],
   },
   {

@@ -1,6 +1,6 @@
 // ─── Flare OS — Domain types ────────────────────────────────────────────────
-// Regla clave: ideas, tasks, resources, prompts y processes tienen clientId
-// opcional. Con clientId → pertenece a un cliente; sin él → interno de Flare.
+// Regla clave: ideas y tasks tienen clientId opcional. Con clientId →
+// pertenece a un cliente; sin él → interno de Flare.
 
 export type ClientStatus =
   | "prospecto"
